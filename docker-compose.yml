@@ -1,0 +1,43 @@
+services:
+  app:
+    build: .
+    container_name: emotsiya-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: emotsiya-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: emotsiya-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+
+volumes:
+  mongo_data:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
