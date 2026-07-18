@@ -44,71 +44,353 @@ const options: swaggerJsdoc.Options = {
             statusCode: { type: 'integer' },
           },
         },
-        RegisterRequest: {
+        UserProfile: {
           type: 'object',
-          required: ['name', 'email', 'password'],
           properties: {
-            name: { type: 'string', example: 'John Doe' },
-            email: { type: 'string', format: 'email', example: 'john@example.com' },
-            password: { type: 'string', minLength: 6, example: '123456' },
-            role: {
+            schoolName: { type: 'string', example: 'Green Valley School' },
+            institutionName: { type: 'string', example: 'Green Valley School' },
+            institutionType: {
               type: 'string',
-              enum: ['admin', 'school', 'government', 'student'],
-              example: 'student',
+              enum: ['Government', 'Private', 'Semi-Government'],
+            },
+            principalName: { type: 'string', example: 'Dr. Rakesh Sharma' },
+            contactPerson: { type: 'string', example: 'John Doe' },
+            address: { type: 'string', example: '221 Central Ave' },
+            city: { type: 'string', example: 'Delhi' },
+            state: { type: 'string', example: 'Delhi' },
+            organizationName: { type: 'string', example: 'Delhi Civic Office' },
+            department: { type: 'string', example: 'Urban Welfare' },
+            permissions: { type: 'array', items: { type: 'string' }, example: ['all'] },
+          },
+        },
+        CreateSchoolRequest: {
+          type: 'object',
+          required: [
+            'institutionName',
+            'principalName',
+            'contactPerson',
+            'email',
+            'phone',
+            'address',
+            'city',
+            'state',
+            'institutionType',
+          ],
+          properties: {
+            institutionName: { type: 'string', example: 'Green Valley School' },
+            principalName: { type: 'string', example: 'Dr. Rakesh Sharma' },
+            contactPerson: { type: 'string', example: 'John Doe' },
+            email: { type: 'string', format: 'email', example: 'school@example.com' },
+            phone: { type: 'string', example: '9876543210' },
+            address: { type: 'string', example: '221 Central Ave' },
+            city: { type: 'string', example: 'Delhi' },
+            state: { type: 'string', example: 'Delhi' },
+            institutionType: {
+              type: 'string',
+              enum: ['Government', 'Private', 'Semi-Government'],
+              example: 'Private',
             },
           },
         },
-        LoginRequest: {
+        CreateGovernmentRequest: {
           type: 'object',
-          required: ['email', 'password'],
+          required: ['organizationName', 'department', 'contactPerson', 'email', 'phone', 'city'],
           properties: {
-            email: { type: 'string', format: 'email', example: 'john@example.com' },
-            password: { type: 'string', example: '123456' },
+            organizationName: { type: 'string', example: 'Delhi Civic Office' },
+            department: { type: 'string', example: 'Urban Welfare' },
+            contactPerson: { type: 'string', example: 'Gov Officer' },
+            email: { type: 'string', format: 'email', example: 'gov@example.com' },
+            phone: { type: 'string', example: '9811111111' },
+            city: { type: 'string', example: 'Delhi' },
           },
         },
-        RefreshTokenRequest: {
+        RegisteredUserResponse: {
           type: 'object',
-          required: ['refreshToken'],
           properties: {
-            refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIs...' },
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'User registered successfully.' },
+            data: {
+              type: 'object',
+              properties: {
+                _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+                role: { type: 'string', enum: ['school', 'government'], example: 'school' },
+                status: { type: 'string', example: 'active' },
+                email: { type: 'string', example: 'school@example.com' },
+              },
+            },
+            statusCode: { type: 'integer', example: 201 },
+          },
+        },
+        SchoolOnboardingItem: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+            institutionName: { type: 'string', example: 'Green Valley School' },
+            principalName: { type: 'string', example: 'Dr. Rakesh Sharma' },
+            city: { type: 'string', example: 'Delhi' },
+            state: { type: 'string', example: 'Delhi' },
+            email: { type: 'string', example: 'school@example.com' },
+            phone: { type: 'string', example: '9876543280' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'active', 'inactive', 'suspended'],
+              example: 'active',
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        GovernmentOnboardingItem: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e2' },
+            organizationName: { type: 'string', example: 'Delhi Civic Office' },
+            department: { type: 'string', example: 'Urban Welfare' },
+            contactPerson: { type: 'string', example: 'Gov Officer' },
+            city: { type: 'string', example: 'Delhi' },
+            state: { type: 'string', example: 'Delhi' },
+            email: { type: 'string', example: 'gov@example.com' },
+            phone: { type: 'string', example: '9811111111' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'active', 'inactive', 'suspended'],
+              example: 'pending',
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        RoleStatusSummary: {
+          type: 'object',
+          properties: {
+            total: { type: 'integer', example: 9 },
+            approved: { type: 'integer', example: 8 },
+            pending: { type: 'integer', example: 1 },
+          },
+        },
+        OnboardingDashboardSummaryResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Dashboard summary fetched successfully' },
+            data: {
+              type: 'object',
+              properties: {
+                schools: { $ref: '#/components/schemas/RoleStatusSummary' },
+                governments: { $ref: '#/components/schemas/RoleStatusSummary' },
+              },
+            },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        OnboardingSchoolsListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Schools fetched successfully' },
+            data: {
+              type: 'object',
+              properties: {
+                schools: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/SchoolOnboardingItem' },
+                },
+                pagination: { $ref: '#/components/schemas/PaginationMeta' },
+              },
+            },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        OnboardingGovernmentsListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Governments fetched successfully' },
+            data: {
+              type: 'object',
+              properties: {
+                governments: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/GovernmentOnboardingItem' },
+                },
+                pagination: { $ref: '#/components/schemas/PaginationMeta' },
+              },
+            },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        PaginationMeta: {
+          type: 'object',
+          properties: {
+            total: { type: 'integer', example: 25 },
+            page: { type: 'integer', example: 1 },
+            limit: { type: 'integer', example: 10 },
+            totalPages: { type: 'integer', example: 3 },
+          },
+        },
+        SchoolDetails: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+            institutionName: { type: 'string', example: 'Green Valley School' },
+            institutionType: {
+              type: 'string',
+              enum: ['Government', 'Private', 'Semi-Government'],
+              example: 'Private',
+            },
+            principalName: { type: 'string', example: 'Dr. Rakesh Sharma' },
+            contactPerson: { type: 'string', example: 'John Doe' },
+            email: { type: 'string', example: 'school@example.com' },
+            phone: { type: 'string', example: '9876543210' },
+            address: { type: 'string', example: '221 Central Ave' },
+            city: { type: 'string', example: 'Delhi' },
+            state: { type: 'string', example: 'Delhi' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'active', 'inactive', 'suspended'],
+              example: 'active',
+            },
+            isVerified: { type: 'boolean', example: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        GovernmentDetails: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e2' },
+            organizationName: { type: 'string', example: 'Delhi Civic Office' },
+            department: { type: 'string', example: 'Urban Welfare' },
+            contactPerson: { type: 'string', example: 'Gov Officer' },
+            email: { type: 'string', example: 'gov@example.com' },
+            phone: { type: 'string', example: '9811111111' },
+            city: { type: 'string', example: 'Delhi' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'active', 'inactive', 'suspended'],
+              example: 'active',
+            },
+            isVerified: { type: 'boolean', example: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        SchoolDetailsResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'School details fetched successfully' },
+            data: { $ref: '#/components/schemas/SchoolDetails' },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        GovernmentDetailsResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Government details fetched successfully' },
+            data: { $ref: '#/components/schemas/GovernmentDetails' },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        ApproveUserResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'School approved successfully.' },
+            data: { type: 'object', nullable: true, example: null },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        RegisterStudentRequest: {
+          type: 'object',
+          required: [
+            'fullName',
+            'age',
+            'gender',
+            'classGrade',
+            'schoolId',
+            'city',
+            'email',
+            'phone',
+          ],
+          properties: {
+            fullName: { type: 'string', example: 'Rahul Sharma' },
+            age: { type: 'integer', example: 15, minimum: 5, maximum: 100 },
+            gender: { type: 'string', enum: ['Male', 'Female', 'Other'], example: 'Male' },
+            classGrade: { type: 'string', example: 'Class 9' },
+            schoolId: { type: 'string', example: '64d2f3b0b2b9c12345678901' },
+            city: { type: 'string', example: 'Delhi' },
+            email: { type: 'string', format: 'email', example: 'rahul@example.com' },
+            phone: { type: 'string', example: '9876543210' },
+          },
+        },
+        SchoolDropdownItem: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '64d2f3b0b2b9c12345678901' },
+            institutionName: { type: 'string', example: 'Green Valley School' },
+          },
+        },
+        SendOtpRequest: {
+          type: 'object',
+          description: 'Provide either email or phone (not both)',
+          properties: {
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            phone: { type: 'string', example: '9876543210' },
+          },
+        },
+        ResendOtpRequest: {
+          type: 'object',
+          required: ['userId'],
+          properties: {
+            userId: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+          },
+        },
+        VerifyOtpRequest: {
+          type: 'object',
+          required: ['userId', 'otp'],
+          properties: {
+            userId: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+            otp: { type: 'string', example: '123456' },
+          },
+        },
+        SendOtpResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'OTP sent successfully' },
+            userId: { type: 'string' },
+            role: { type: 'string', enum: ['admin', 'school', 'government', 'student'] },
+            maskedPhone: { type: 'string', example: '98******10' },
+            email: { type: 'string', example: 'user@example.com' },
+            expiresIn: { type: 'integer', example: 600 },
+            otp: { type: 'string', example: '123456' },
+          },
+        },
+        VerifyOtpResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIs...' },
+            expiresIn: { type: 'integer', example: 604800 },
+            user: { $ref: '#/components/schemas/User' },
           },
         },
         User: {
           type: 'object',
           properties: {
             _id: { type: 'string' },
-            name: { type: 'string' },
+            fullName: { type: 'string' },
+            age: { type: 'integer' },
+            gender: { type: 'string', enum: ['Male', 'Female', 'Other'] },
+            classGrade: { type: 'string' },
             email: { type: 'string' },
+            phone: { type: 'string' },
             role: { type: 'string', enum: ['admin', 'school', 'government', 'student'] },
-            isActive: { type: 'boolean' },
+            isVerified: { type: 'boolean' },
+            profile: { $ref: '#/components/schemas/UserProfile' },
+            status: { type: 'string', enum: ['pending', 'active', 'inactive', 'suspended'] },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
-          },
-        },
-        UpdateProfileRequest: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', example: 'Updated Name' },
-          },
-        },
-        UpdateUserRequest: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', example: 'Updated Name' },
-            email: { type: 'string', format: 'email' },
-            role: { type: 'string', enum: ['admin', 'school', 'government', 'student'] },
-            isActive: { type: 'boolean' },
-          },
-        },
-        PaginationMeta: {
-          type: 'object',
-          properties: {
-            total: { type: 'integer' },
-            page: { type: 'integer' },
-            limit: { type: 'integer' },
-            totalPages: { type: 'integer' },
-            hasNextPage: { type: 'boolean' },
-            hasPrevPage: { type: 'boolean' },
           },
         },
       },
@@ -121,314 +403,470 @@ const options: swaggerJsdoc.Options = {
       { name: 'Student', description: 'Student role endpoints' },
     ],
     paths: {
-      // ──────────── Auth ────────────
-      '/api/v1/auth/register': {
+      // ──────────── Auth (unified for all roles) ────────────
+      '/api/auth/send-otp': {
         post: {
-          summary: 'Register a new user',
+          summary: 'Send OTP via email or phone (all roles)',
           tags: ['Auth'],
           requestBody: {
             required: true,
             content: {
-              'application/json': { schema: { $ref: '#/components/schemas/RegisterRequest' } },
-            },
-          },
-          responses: {
-            201: {
-              description: 'User registered successfully',
-              content: {
-                'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } },
-              },
-            },
-            400: {
-              description: 'Validation error',
-              content: {
-                'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-              },
-            },
-            409: {
-              description: 'Email already exists',
-              content: {
-                'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-              },
-            },
-          },
-        },
-      },
-      '/api/v1/auth/login': {
-        post: {
-          summary: 'Login user',
-          tags: ['Auth'],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': { schema: { $ref: '#/components/schemas/LoginRequest' } },
+              'application/json': { schema: { $ref: '#/components/schemas/SendOtpRequest' } },
             },
           },
           responses: {
             200: {
-              description: 'Login successful',
+              description: 'OTP sent successfully',
               content: {
-                'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } },
+                'application/json': { schema: { $ref: '#/components/schemas/SendOtpResponse' } },
               },
             },
-            401: {
-              description: 'Invalid credentials',
-              content: {
-                'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-              },
-            },
+            400: { description: 'Validation error' },
+            403: { description: 'Account inactive or suspended' },
+            404: { description: 'User not found' },
+            429: { description: 'Too many OTP requests' },
           },
         },
       },
-      '/api/v1/auth/refresh-token': {
+      '/api/auth/re-send-otp': {
         post: {
-          summary: 'Refresh access token',
+          summary: 'Re-send OTP (invalidates previous unused OTP)',
           tags: ['Auth'],
           requestBody: {
             required: true,
             content: {
-              'application/json': { schema: { $ref: '#/components/schemas/RefreshTokenRequest' } },
+              'application/json': { schema: { $ref: '#/components/schemas/ResendOtpRequest' } },
             },
           },
           responses: {
-            200: { description: 'Token refreshed successfully' },
-            401: { description: 'Invalid refresh token' },
+            200: { description: 'OTP resent successfully' },
+            400: { description: 'Validation error' },
+            403: { description: 'Account inactive or suspended' },
+            404: { description: 'User not found' },
+            429: { description: 'Too many OTP requests' },
           },
         },
       },
-      '/api/v1/auth/logout': {
+      '/api/auth/verify-otp': {
         post: {
-          summary: 'Logout user',
+          summary: 'Verify OTP and receive a 7-day JWT',
           tags: ['Auth'],
-          security: [{ bearerAuth: [] }],
-          responses: {
-            200: { description: 'Logout successful' },
-            401: { description: 'Unauthorized' },
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/VerifyOtpRequest' } },
+            },
           },
-        },
-      },
-      '/api/v1/auth/me': {
-        get: {
-          summary: 'Get current user profile',
-          tags: ['Auth'],
-          security: [{ bearerAuth: [] }],
           responses: {
             200: {
-              description: 'Profile fetched',
+              description: 'OTP verified, token issued',
               content: {
-                'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } },
+                'application/json': { schema: { $ref: '#/components/schemas/VerifyOtpResponse' } },
               },
             },
+            400: { description: 'Invalid, expired, or already used OTP' },
+            403: { description: 'Account inactive or suspended' },
+            404: { description: 'User not found' },
+          },
+        },
+      },
+      '/api/auth/logout': {
+        post: {
+          summary: 'Logout (invalidates the current session)',
+          tags: ['Auth'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Logged out successfully' },
             401: { description: 'Unauthorized' },
           },
         },
       },
 
       // ──────────── Admin ────────────
-      '/api/v1/admin/dashboard': {
+      '/api/v1/admin/onboarding/dashboard': {
         get: {
-          summary: 'Get admin dashboard stats',
+          summary: 'Get onboarding dashboard summary (admin only)',
+          description:
+            'Returns total, approved (active), and pending counts for schools and governments. Requires Admin JWT.',
           tags: ['Admin'],
           security: [{ bearerAuth: [] }],
           responses: {
-            200: { description: 'Dashboard stats fetched' },
+            200: {
+              description: 'Dashboard summary fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/OnboardingDashboardSummaryResponse' },
+                },
+              },
+            },
             401: { description: 'Unauthorized' },
             403: { description: 'Forbidden — admin only' },
           },
         },
       },
-      '/api/v1/admin/users': {
+      '/api/v1/admin/onboarding/schools': {
         get: {
-          summary: 'Get all users (paginated)',
+          summary: 'List onboarding schools (admin only)',
+          description:
+            'Paginated school users with optional search and status filter. Sorted newest first. Requires Admin JWT.',
           tags: ['Admin'],
           security: [{ bearerAuth: [] }],
           parameters: [
-            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
-            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
-            { in: 'query', name: 'search', schema: { type: 'string' } },
             {
+              name: 'search',
               in: 'query',
-              name: 'role',
-              schema: { type: 'string', enum: ['admin', 'school', 'government', 'student'] },
+              required: false,
+              description:
+                'Search by institution name, principal name, email, phone, city, or state',
+              schema: { type: 'string', example: 'Green Valley' },
             },
-            { in: 'query', name: 'sortBy', schema: { type: 'string', default: 'createdAt' } },
             {
+              name: 'status',
               in: 'query',
-              name: 'sortOrder',
-              schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' },
+              required: false,
+              description: 'Filter by account status',
+              schema: {
+                type: 'string',
+                enum: ['pending', 'active', 'inactive', 'suspended'],
+                example: 'pending',
+              },
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, default: 1, example: 1 },
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10, example: 10 },
             },
           ],
           responses: {
-            200: { description: 'Users fetched successfully' },
+            200: {
+              description: 'Schools fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/OnboardingSchoolsListResponse' },
+                },
+              },
+            },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
           },
         },
       },
-      '/api/v1/admin/users/{id}': {
+      '/api/v1/admin/onboarding/governments': {
         get: {
-          summary: 'Get user by ID',
+          summary: 'List onboarding governments (admin only)',
+          description:
+            'Paginated government users with optional search and status filter. Sorted newest first. Requires Admin JWT.',
           tags: ['Admin'],
           security: [{ bearerAuth: [] }],
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              required: false,
+              description:
+                'Search by organization name, contact person, department, email, phone, city, or state',
+              schema: { type: 'string', example: 'Delhi' },
+            },
+            {
+              name: 'status',
+              in: 'query',
+              required: false,
+              description: 'Filter by account status',
+              schema: {
+                type: 'string',
+                enum: ['pending', 'active', 'inactive', 'suspended'],
+                example: 'pending',
+              },
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, default: 1, example: 1 },
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10, example: 10 },
+            },
+          ],
           responses: {
-            200: { description: 'User fetched' },
-            404: { description: 'User not found' },
+            200: {
+              description: 'Governments fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/OnboardingGovernmentsListResponse' },
+                },
+              },
+            },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
           },
         },
-        put: {
-          summary: 'Update user',
+      },
+      '/api/v1/admin/schools': {
+        post: {
+          summary: 'Register a school user (admin only)',
+          description:
+            'Creates an active, verified school account in the users collection. Requires Admin JWT.',
           tags: ['Admin'],
           security: [{ bearerAuth: [] }],
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
           requestBody: {
             required: true,
             content: {
-              'application/json': { schema: { $ref: '#/components/schemas/UpdateUserRequest' } },
+              'application/json': { schema: { $ref: '#/components/schemas/CreateSchoolRequest' } },
             },
           },
           responses: {
-            200: { description: 'User updated' },
-            404: { description: 'User not found' },
+            201: {
+              description: 'School user registered successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/RegisteredUserResponse' },
+                },
+              },
+            },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            409: { description: 'Email or phone number already exists' },
           },
         },
-        delete: {
-          summary: 'Soft delete user',
+      },
+      '/api/v1/admin/schools/{id}': {
+        get: {
+          summary: 'Get school details by ID (admin only)',
+          description: 'Returns complete school profile details. Requires Admin JWT.',
           tags: ['Admin'],
           security: [{ bearerAuth: [] }],
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              description: 'School user MongoDB ObjectId',
+              schema: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+            },
+          ],
           responses: {
-            200: { description: 'User deleted' },
+            200: {
+              description: 'School details fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/SchoolDetailsResponse' },
+                },
+              },
+            },
+            400: { description: 'Invalid ObjectId or invalid role' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
             404: { description: 'User not found' },
           },
         },
       },
-
-      // ──────────── School ────────────
-      '/api/v1/school/dashboard': {
-        get: {
-          summary: 'Get school dashboard stats',
-          tags: ['School'],
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Dashboard fetched' } },
-        },
-      },
-      '/api/v1/school/students': {
-        get: {
-          summary: 'Get students list',
-          tags: ['School'],
+      '/api/v1/admin/schools/{id}/approve': {
+        patch: {
+          summary: 'Approve a pending school (admin only)',
+          description:
+            'Sets school status to active and isVerified to true. Only pending school users can be approved.',
+          tags: ['Admin'],
           security: [{ bearerAuth: [] }],
           parameters: [
-            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
-            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
-            { in: 'query', name: 'search', schema: { type: 'string' } },
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              description: 'School user MongoDB ObjectId',
+              schema: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+            },
           ],
-          responses: { 200: { description: 'Students fetched' } },
-        },
-      },
-      '/api/v1/school/students/{id}': {
-        get: {
-          summary: 'Get student by ID',
-          tags: ['School'],
-          security: [{ bearerAuth: [] }],
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
           responses: {
-            200: { description: 'Student fetched' },
-            404: { description: 'Student not found' },
+            200: {
+              description: 'School approved successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/ApproveUserResponse' },
+                },
+              },
+            },
+            400: {
+              description: 'Validation failed, invalid role, or school already approved',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'User not found' },
           },
         },
       },
-      '/api/v1/school/profile': {
-        get: {
-          summary: 'Get school profile',
-          tags: ['School'],
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Profile fetched' } },
-        },
-        put: {
-          summary: 'Update school profile',
-          tags: ['School'],
+      '/api/v1/admin/governments': {
+        post: {
+          summary: 'Register a government user (admin only)',
+          description:
+            'Creates an active, verified government account in the users collection. Requires Admin JWT.',
+          tags: ['Admin'],
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
-              'application/json': { schema: { $ref: '#/components/schemas/UpdateProfileRequest' } },
+              'application/json': {
+                schema: { $ref: '#/components/schemas/CreateGovernmentRequest' },
+              },
             },
           },
-          responses: { 200: { description: 'Profile updated' } },
+          responses: {
+            201: {
+              description: 'Government user registered successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/RegisteredUserResponse' },
+                },
+              },
+            },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            409: { description: 'Email or phone number already exists' },
+          },
         },
       },
-
-      // ──────────── Government ────────────
-      '/api/v1/government/dashboard': {
+      '/api/v1/admin/governments/{id}': {
         get: {
-          summary: 'Get government dashboard stats',
-          tags: ['Government'],
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Dashboard fetched' } },
-        },
-      },
-      '/api/v1/government/users': {
-        get: {
-          summary: 'Get all users',
-          tags: ['Government'],
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
-            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
-            { in: 'query', name: 'role', schema: { type: 'string' } },
-            { in: 'query', name: 'search', schema: { type: 'string' } },
-          ],
-          responses: { 200: { description: 'Users fetched' } },
-        },
-      },
-      '/api/v1/government/schools': {
-        get: {
-          summary: 'Get all schools',
-          tags: ['Government'],
+          summary: 'Get government details by ID (admin only)',
+          description: 'Returns complete government profile details. Requires Admin JWT.',
+          tags: ['Admin'],
           security: [{ bearerAuth: [] }],
           parameters: [
-            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
-            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
-            { in: 'query', name: 'search', schema: { type: 'string' } },
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              description: 'Government user MongoDB ObjectId',
+              schema: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e2' },
+            },
           ],
-          responses: { 200: { description: 'Schools fetched' } },
+          responses: {
+            200: {
+              description: 'Government details fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/GovernmentDetailsResponse' },
+                },
+              },
+            },
+            400: { description: 'Invalid ObjectId or invalid role' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'User not found' },
+          },
         },
       },
-      '/api/v1/government/profile': {
-        get: {
-          summary: 'Get government profile',
-          tags: ['Government'],
+      '/api/v1/admin/governments/{id}/approve': {
+        patch: {
+          summary: 'Approve a pending government (admin only)',
+          description:
+            'Sets government status to active and isVerified to true. Only pending government users can be approved.',
+          tags: ['Admin'],
           security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Profile fetched' } },
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              description: 'Government user MongoDB ObjectId',
+              schema: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e2' },
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Government approved successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    allOf: [
+                      { $ref: '#/components/schemas/ApproveUserResponse' },
+                      {
+                        type: 'object',
+                        properties: {
+                          message: {
+                            type: 'string',
+                            example: 'Government approved successfully.',
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            400: {
+              description: 'Validation failed, invalid role, or government already approved',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'User not found' },
+          },
         },
       },
 
       // ──────────── Student ────────────
-      '/api/v1/student/dashboard': {
-        get: {
-          summary: 'Get student dashboard',
+      '/api/v1/student/register': {
+        post: {
+          summary: 'Register a student',
+          description:
+            'Creates a pending student account linked to an active school. Public endpoint.',
           tags: ['Student'],
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Dashboard fetched' } },
-        },
-      },
-      '/api/v1/student/profile': {
-        get: {
-          summary: 'Get student profile',
-          tags: ['Student'],
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Profile fetched' } },
-        },
-        put: {
-          summary: 'Update student profile',
-          tags: ['Student'],
-          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
-              'application/json': { schema: { $ref: '#/components/schemas/UpdateProfileRequest' } },
+              'application/json': {
+                schema: { $ref: '#/components/schemas/RegisterStudentRequest' },
+              },
             },
           },
-          responses: { 200: { description: 'Profile updated' } },
+          responses: {
+            201: { description: 'Student registered successfully' },
+            400: { description: 'Validation failed or school is inactive' },
+            404: { description: 'School not found' },
+            409: { description: 'Email or phone number already exists' },
+          },
+        },
+      },
+      '/api/v1/student/schools': {
+        get: {
+          summary: 'Get active schools for dropdown',
+          description:
+            'Returns active school users with id and institutionName only. Public endpoint.',
+          tags: ['Student'],
+          responses: {
+            200: {
+              description: 'Schools fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string' },
+                      data: {
+                        type: 'array',
+                        items: { $ref: '#/components/schemas/SchoolDropdownItem' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },

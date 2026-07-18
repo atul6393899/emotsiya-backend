@@ -7,28 +7,36 @@ import { logger } from '../config/logger';
 
 const SEED_USERS = [
   {
-    name: 'Admin',
+    fullName: 'Admin',
     email: 'admin@example.com',
-    password: '123456',
+    phone: '9876543210',
     role: 'admin',
+    isVerified: true,
+    status: 'active',
   },
   {
-    name: 'School',
+    fullName: 'School',
     email: 'school@example.com',
-    password: '123456',
+    phone: '9876543211',
     role: 'school',
+    isVerified: true,
+    status: 'active',
   },
   {
-    name: 'Government',
+    fullName: 'Government',
     email: 'gov@example.com',
-    password: '123456',
+    phone: '9876543212',
     role: 'government',
+    isVerified: true,
+    status: 'active',
   },
   {
-    name: 'Student',
+    fullName: 'Student',
     email: 'satya@example.com',
-    password: '123456',
+    phone: '9876543213',
     role: 'student',
+    isVerified: true,
+    status: 'active',
   },
 ];
 
@@ -39,13 +47,12 @@ const seed = async (): Promise<void> => {
     logger.info('Connected to MongoDB for seeding');
 
     for (const userData of SEED_USERS) {
-      const existing = await User.findOne({ email: userData.email });
-      if (existing) {
-        logger.info(`User ${userData.email} already exists, skipping`);
-        continue;
-      }
-      await User.create(userData);
-      logger.info(`Created ${userData.role} user: ${userData.email}`);
+      await User.findOneAndUpdate({ email: userData.email }, userData, {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      });
+      logger.info(`Upserted ${userData.role} user: ${userData.email}`);
     }
 
     logger.info('Seeding completed successfully');

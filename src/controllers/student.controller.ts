@@ -5,28 +5,27 @@ import { ApiResponse } from '../utils/ApiResponse';
 const studentService = new StudentService();
 
 export class StudentController {
-  static getDashboard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  static registerStudent = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
-      const stats = await studentService.getDashboard(req.user!.userId);
-      ApiResponse.success(res, stats, 'Student dashboard fetched successfully');
+      const student = await studentService.registerStudent(req.body);
+      ApiResponse.created(res, student, 'Student registered successfully.');
     } catch (error) {
       next(error);
     }
   };
 
-  static getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  static getSchoolDropdown = async (
+    _req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
-      const profile = await studentService.getProfile(req.user!.userId);
-      ApiResponse.success(res, profile, 'Profile fetched successfully');
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  static updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const profile = await studentService.updateProfile(req.user!.userId, req.body);
-      ApiResponse.success(res, profile, 'Profile updated successfully');
+      const schools = await studentService.getSchoolDropdown();
+      ApiResponse.success(res, schools, 'Schools fetched successfully');
     } catch (error) {
       next(error);
     }

@@ -19,6 +19,19 @@ export const ROLES = {
   STUDENT: 'student',
 } as const;
 
+export const OTP = {
+  LENGTH: 6,
+  EXPIRY_MINUTES: 10,
+  EXPIRY_SECONDS: 600,
+  MAX_REQUESTS: 5,
+  RATE_LIMIT_WINDOW_MINUTES: 15,
+} as const;
+
+export const JWT = {
+  EXPIRY: '7d',
+  EXPIRY_SECONDS: 604800,
+} as const;
+
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
   DEFAULT_LIMIT: 10,
@@ -26,30 +39,29 @@ export const PAGINATION = {
 } as const;
 
 export const AUTH_MESSAGES = {
-  REGISTER_SUCCESS: 'User registered successfully',
   LOGIN_SUCCESS: 'Login successful',
-  LOGOUT_SUCCESS: 'Logout successful',
-  TOKEN_REFRESHED: 'Token refreshed successfully',
-  INVALID_CREDENTIALS: 'Invalid email or password',
+  LOGOUT_SUCCESS: 'Logged out successfully',
+  INVALID_CREDENTIALS: 'Invalid credentials',
   UNAUTHORIZED: 'Authentication required',
   FORBIDDEN: 'You do not have permission to perform this action',
-  EMAIL_EXISTS: 'Email already exists',
   USER_NOT_FOUND: 'User not found',
-  INVALID_TOKEN: 'Invalid or expired token',
+  INVALID_TOKEN: 'Invalid token',
+  TOKEN_EXPIRED: 'Token has expired',
   TOKEN_REQUIRED: 'Access token is required',
-} as const;
-
-export const USER_MESSAGES = {
-  FETCH_SUCCESS: 'Users fetched successfully',
-  FETCH_ONE_SUCCESS: 'User fetched successfully',
-  UPDATE_SUCCESS: 'User updated successfully',
-  DELETE_SUCCESS: 'User deleted successfully',
-  NOT_FOUND: 'User not found',
+  OTP_SENT: 'OTP sent successfully',
+  OTP_RESENT: 'OTP resent successfully',
+  OTP_VERIFIED: 'OTP verified successfully',
+  INVALID_OTP: 'Invalid OTP',
+  OTP_EXPIRED: 'OTP has expired',
+  OTP_ALREADY_USED: 'OTP has already been used',
+  OTP_NOT_FOUND: 'No OTP found. Please request a new OTP',
+  ACCOUNT_INACTIVE: 'Account is inactive',
+  ACCOUNT_SUSPENDED: 'Account is suspended',
+  TOO_MANY_OTP_REQUESTS: 'Too many OTP requests. Please try again after 15 minutes',
 } as const;
 
 export const VALIDATION_MESSAGES = {
   REQUIRED: 'is required',
   INVALID_EMAIL: 'must be a valid email',
-  MIN_PASSWORD: 'must be at least 8 characters',
   INVALID_OBJECT_ID: 'must be a valid MongoDB ObjectId',
 } as const;

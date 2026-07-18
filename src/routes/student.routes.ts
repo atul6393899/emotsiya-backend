@@ -1,15 +1,15 @@
 import { Router } from 'express';
 import { StudentController } from '../controllers/student.controller';
-import { authenticate } from '../middlewares/auth.middleware';
-import { authorizeRoles } from '../middlewares/role.middleware';
-import { ROLES } from '../constants/roles';
+import { validate } from '../middlewares/validation.middleware';
+import { registerStudentValidation } from '../validations/student.validation';
 
 const router = Router();
 
-router.use(authenticate, authorizeRoles(ROLES.STUDENT));
-
-router.get('/dashboard', StudentController.getDashboard);
-router.get('/profile', StudentController.getProfile);
-router.put('/profile', StudentController.updateProfile);
+router.post(
+  '/register',
+  validate({ body: registerStudentValidation }),
+  StudentController.registerStudent,
+);
+router.get('/schools', StudentController.getSchoolDropdown);
 
 export default router;

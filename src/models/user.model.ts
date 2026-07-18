@@ -1,96 +1,138 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
-import bcrypt from 'bcrypt';
-import { ALL_ROLES } from '../constants/roles';
+import mongoose, { Document, Model, Schema, Types } from 'mongoose';
+import { ALL_ROLES, ROLES, Role } from '../constants/roles';
 
-export interface IUser {
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  isActive: boolean;
-  refreshToken?: string;
-  isDeleted: boolean;
-  deletedAt?: Date;
+export type Gender = 'Male' | 'Female' | 'Other';
+export type UserStatus = 'pending' | 'active' | 'inactive' | 'suspended';
+export type InstitutionType = 'Government' | 'Private' | 'Semi-Government';
+
+export interface IUserProfile {
+  // Student fields
+  schoolName?: string;
+
+  // School & Government fields
+  institutionName?: string;
+  institutionType?: InstitutionType;
+  principalName?: string;
+  contactPerson?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  department?: string;
+  organizationName?: string;
+
+  // Admin fields
+  permissions?: string[];
 }
 
-export interface IUserDocument extends IUser, Document {
-  _id: Types.ObjectId;
+export interface IUserDocument extends Document<Types.ObjectId> {
+  fullName: string;
+  age?: number;
+  gender?: Gender;
+  classGrade?: string;
+  role: Role;
+  email: string;
+  phone?: string;
+  currentToken?: string | null;
+  isVerified: boolean;
+  profile?: IUserProfile;
+  status: UserStatus;
+  lastLoginAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUserDocument>(
   {
-    name: {
+    fullName: {
       type: String,
-      required: [true, 'Name is required'],
+      required: true,
       trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [50, 'Name cannot exceed 50 characters'],
     },
-    email: {
+    age: {
+      type: Number,
+      min: 5,
+      max: 100,
+    },
+    gender: {
       type: String,
-      required: [true, 'Email is required'],
-      unique: true,
+      enum: ['Male', 'Female', 'Other'],
+    },
+    classGrade: {
+      type: String,
       trim: true,
-      lowercase: true,
-    },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
-      select: false,
     },
     role: {
       type: String,
       enum: ALL_ROLES,
-      default: 'student',
+      required: true,
+      default: ROLES.STUDENT,
     },
-    isActive: {
-      type: Boolean,
-      default: true,
+
+    // Contact & credentials
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
     },
-    refreshToken: {
+    phone: {
+      type: String,
+      trim: true,
+      match: [/^\d{10}$/, 'Please enter a valid 10-digit phone number'],
+    },
+    currentToken: {
       type: String,
       select: false,
+      default: null,
     },
-    isDeleted: {
+    isVerified: {
       type: Boolean,
       default: false,
     },
-    deletedAt: {
+
+    // Role-specific profile
+    profile: {
+      // Student fields
+      schoolName: { type: String, trim: true },
+
+      // School & Government fields
+      institutionName: { type: String, trim: true },
+      institutionType: {
+        type: String,
+      },
+      principalName: { type: String, trim: true },
+      contactPerson: { type: String, trim: true },
+      address: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      department: { type: String, trim: true },
+      organizationName: { type: String, trim: true },
+
+      // Admin fields
+      permissions: [{ type: String }],
+    },
+
+    // Account management
+    status: {
+      type: String,
+      enum: ['pending', 'active', 'inactive', 'suspended'],
+      default: 'pending',
+    },
+    lastLoginAt: {
       type: Date,
       default: null,
     },
   },
   {
     timestamps: true,
-    toJSON: {
-      transform(_doc, ret: Record<string, unknown>) {
-        delete ret.password;
-        delete ret.refreshToken;
-        delete ret.__v;
-        return ret;
-      },
-    },
   },
 );
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+// Indexes for better performance (email already has a unique index)
+userSchema.index({ phone: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ status: 1 });
 
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
-};
-
-userSchema.pre(/^find/, function (this: mongoose.Query<unknown, unknown>, next) {
-  this.where({ isDeleted: { $ne: true } });
-  next();
-});
-
-export const User = mongoose.model<IUserDocument>('User', userSchema);
+export const User: Model<IUserDocument> = mongoose.model<IUserDocument>('User', userSchema);

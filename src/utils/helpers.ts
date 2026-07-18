@@ -1,8 +1,22 @@
 import mongoose from 'mongoose';
-import { PAGINATION } from './constants';
+import crypto from 'crypto';
+import { PAGINATION, OTP } from './constants';
+
+export const generateOtp = (): { otp: string; otpExpiry: Date } => {
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  const otpExpiry = new Date(Date.now() + OTP.EXPIRY_MINUTES * 60 * 1000);
+  return { otp, otpExpiry };
+};
 
 export const isValidObjectId = (id: string): boolean => {
   return mongoose.Types.ObjectId.isValid(id);
+};
+
+export const maskPhone = (phone?: string): string | undefined => {
+  if (!phone || phone.length < 4) {
+    return undefined;
+  }
+  return `${phone.slice(0, 2)}${'*'.repeat(phone.length - 4)}${phone.slice(-2)}`;
 };
 
 export const getPaginationParams = (
