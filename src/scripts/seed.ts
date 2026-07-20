@@ -3,6 +3,8 @@ dotenv.config();
 
 import mongoose from 'mongoose';
 import { User } from '../models/user.model';
+import { seedEventCategories } from './seedEventCategories';
+import { DEFAULT_EVENT_CATEGORIES } from '../constants/default-event-categories';
 import { logger } from '../config/logger';
 
 const SEED_USERS = [
@@ -54,6 +56,11 @@ const seed = async (): Promise<void> => {
       });
       logger.info(`Upserted ${userData.role} user: ${userData.email}`);
     }
+
+    const { inserted, skipped } = await seedEventCategories();
+    logger.info(
+      `Event categories: inserted ${inserted}, skipped ${skipped} (of ${DEFAULT_EVENT_CATEGORIES.length})`,
+    );
 
     logger.info('Seeding completed successfully');
     await mongoose.disconnect();

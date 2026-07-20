@@ -14,6 +14,7 @@
     "test": "jest --forceExit --detectOpenHandles",
     "test:coverage": "jest --coverage --forceExit --detectOpenHandles",
     "seed": "tsx src/scripts/seed.ts",
+    "seed:event-categories": "tsx src/scripts/seedEventCategories.ts",
     "sonar": "sonar-scanner",
     "prepare": "husky"
   },

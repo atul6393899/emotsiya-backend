@@ -1,4 +1,35 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import os from 'os';
+
+const PORT = process.env.PORT || 5000;
+
+const getLanIp = (): string | null => {
+  const nets = os.networkInterfaces();
+  for (const entries of Object.values(nets)) {
+    for (const net of entries ?? []) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return null;
+};
+
+const lanIp = getLanIp();
+
+const servers: Array<{ url: string; description: string }> = [
+  {
+    url: `http://localhost:${PORT}`,
+    description: 'Local development',
+  },
+];
+
+if (lanIp) {
+  servers.push({
+    url: `http://${lanIp}:${PORT}`,
+    description: 'LAN / network access',
+  });
+}
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -11,12 +42,7 @@ const options: swaggerJsdoc.Options = {
         name: 'API Support',
       },
     },
-    servers: [
-      {
-        url: `http://localhost:${process.env.PORT || 5000}`,
-        description: 'Development server',
-      },
-    ],
+    servers,
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -48,6 +74,7 @@ const options: swaggerJsdoc.Options = {
           type: 'object',
           properties: {
             schoolName: { type: 'string', example: 'Green Valley School' },
+            admissionNumber: { type: 'string', example: 'ADM-2024-001' },
             institutionName: { type: 'string', example: 'Green Valley School' },
             institutionType: {
               type: 'string',
@@ -176,6 +203,7 @@ const options: swaggerJsdoc.Options = {
               properties: {
                 schools: { $ref: '#/components/schemas/RoleStatusSummary' },
                 governments: { $ref: '#/components/schemas/RoleStatusSummary' },
+                students: { $ref: '#/components/schemas/RoleStatusSummary' },
               },
             },
             statusCode: { type: 'integer', example: 200 },
@@ -330,6 +358,79 @@ const options: swaggerJsdoc.Options = {
             institutionName: { type: 'string', example: 'Green Valley School' },
           },
         },
+        StudentListItem: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e3' },
+            fullName: { type: 'string', example: 'Rahul Sharma' },
+            age: { type: 'integer', example: 14 },
+            gender: { type: 'string', enum: ['Male', 'Female', 'Other'], example: 'Male' },
+            classGrade: { type: 'string', example: '8' },
+            schoolId: { type: 'string', example: '687b008cc16d670962ee7b09' },
+            schoolName: { type: 'string', example: 'Green Valley School' },
+            city: { type: 'string', example: 'Delhi' },
+            admissionNumber: { type: 'string', example: 'ADM-2024-001' },
+            email: { type: 'string', example: 'rahul@example.com' },
+            phone: { type: 'string', example: '9876543211' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'active', 'inactive', 'suspended'],
+              example: 'pending',
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        StudentDetails: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e3' },
+            fullName: { type: 'string', example: 'Rahul Sharma' },
+            age: { type: 'integer', example: 14 },
+            gender: { type: 'string', enum: ['Male', 'Female', 'Other'], example: 'Male' },
+            classGrade: { type: 'string', example: '8' },
+            schoolId: { type: 'string', example: '687b008cc16d670962ee7b09' },
+            schoolName: { type: 'string', example: 'Green Valley School' },
+            city: { type: 'string', example: 'Delhi' },
+            admissionNumber: { type: 'string', example: 'ADM-2024-001' },
+            email: { type: 'string', example: 'rahul@example.com' },
+            phone: { type: 'string', example: '9876543211' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'active', 'inactive', 'suspended'],
+              example: 'pending',
+            },
+            isVerified: { type: 'boolean', example: false },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        StudentsListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Students fetched successfully' },
+            data: {
+              type: 'object',
+              properties: {
+                students: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/StudentListItem' },
+                },
+                pagination: { $ref: '#/components/schemas/PaginationMeta' },
+              },
+            },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        StudentDetailsResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Student details fetched successfully' },
+            data: { $ref: '#/components/schemas/StudentDetails' },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
         SendOtpRequest: {
           type: 'object',
           description: 'Provide either email or phone (not both)',
@@ -385,12 +486,179 @@ const options: swaggerJsdoc.Options = {
             classGrade: { type: 'string' },
             email: { type: 'string' },
             phone: { type: 'string' },
+            schoolId: { type: 'string', example: '687b008cc16d670962ee7b09' },
             role: { type: 'string', enum: ['admin', 'school', 'government', 'student'] },
             isVerified: { type: 'boolean' },
             profile: { $ref: '#/components/schemas/UserProfile' },
             status: { type: 'string', enum: ['pending', 'active', 'inactive', 'suspended'] },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        EventCategory: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e1' },
+            name: { type: 'string', example: 'Crime Reduction' },
+            icon: { type: 'string', example: '🛡️' },
+            description: { type: 'string', example: 'Events related to crime awareness' },
+            color: { type: 'string', example: '#4F46E5' },
+            is_active: { type: 'boolean', example: true },
+            sort_order: { type: 'integer', example: 1 },
+            created_by: { type: 'string', nullable: true },
+            updated_by: { type: 'string', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateEventCategoryRequest: {
+          type: 'object',
+          required: ['name', 'icon'],
+          properties: {
+            name: { type: 'string', minLength: 2, maxLength: 100, example: 'Crime Reduction' },
+            icon: { type: 'string', example: '🛡️' },
+            description: { type: 'string', example: 'Events related to crime awareness' },
+            color: { type: 'string', example: '#4F46E5' },
+            sort_order: { type: 'integer', example: 1 },
+          },
+        },
+        UpdateEventCategoryStatusRequest: {
+          type: 'object',
+          required: ['is_active'],
+          properties: {
+            is_active: { type: 'boolean', example: false },
+          },
+        },
+        EventCategoryListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Categories fetched successfully' },
+            data: {
+              type: 'object',
+              properties: {
+                categories: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/EventCategory' },
+                },
+                pagination: { $ref: '#/components/schemas/PaginationMeta' },
+              },
+            },
+            statusCode: { type: 'integer', example: 200 },
+          },
+        },
+        EventCategoryDropdownItem: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            name: { type: 'string', example: 'Crime Reduction' },
+            icon: { type: 'string', example: '🛡️' },
+          },
+        },
+        CreateEventRequest: {
+          type: 'object',
+          required: ['title', 'description', 'categoryId', 'city', 'eventDate', 'eventType'],
+          properties: {
+            title: { type: 'string', maxLength: 200, example: 'Clean India Drive' },
+            description: { type: 'string', example: 'City cleanliness awareness event.' },
+            categoryId: { type: 'string', example: '687654987654987654987654' },
+            city: { type: 'string', example: 'Jaipur' },
+            eventDate: { type: 'string', format: 'date', example: '2026-07-25' },
+            eventType: { type: 'string', enum: ['public', 'private'], example: 'public' },
+            schoolIds: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['687111111111111111111111'],
+            },
+            governmentIds: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['688111111111111111111111'],
+            },
+          },
+        },
+        CreateMissionRequest: {
+          type: 'object',
+          required: ['title', 'eventId', 'rewardPoints', 'deadline', 'difficulty', 'description'],
+          properties: {
+            title: { type: 'string', maxLength: 200, example: 'Collect Plastic Waste' },
+            eventId: { type: 'string', example: '687654987654987654987654' },
+            rewardPoints: { type: 'integer', minimum: 1, example: 100 },
+            deadline: { type: 'string', format: 'date', example: '2026-07-30' },
+            difficulty: {
+              type: 'string',
+              enum: ['Easy', 'Medium', 'Hard'],
+              example: 'Easy',
+            },
+            description: {
+              type: 'string',
+              example: 'Collect plastic waste around your locality.',
+            },
+            is_active: { type: 'boolean', example: true },
+          },
+        },
+        MissionResponse: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            title: { type: 'string' },
+            rewardPoints: { type: 'integer' },
+            deadline: { type: 'string', format: 'date-time' },
+            difficulty: { type: 'string', enum: ['Easy', 'Medium', 'Hard'] },
+            description: { type: 'string' },
+            is_active: { type: 'boolean' },
+            event: {
+              type: 'object',
+              properties: {
+                _id: { type: 'string' },
+                title: { type: 'string' },
+                eventDate: { type: 'string', format: 'date-time' },
+              },
+            },
+            created_by: { type: 'string', nullable: true },
+            updated_by: { type: 'string', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        EventResponse: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            city: { type: 'string' },
+            eventDate: { type: 'string', format: 'date-time' },
+            eventType: { type: 'string', enum: ['public', 'private'] },
+            is_active: { type: 'boolean' },
+            category: {
+              type: 'object',
+              properties: {
+                _id: { type: 'string' },
+                name: { type: 'string' },
+                icon: { type: 'string' },
+              },
+            },
+            schools: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string' },
+                  school_name: { type: 'string' },
+                },
+              },
+            },
+            governmentOrganizations: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string' },
+                  organization_name: { type: 'string' },
+                },
+              },
+            },
           },
         },
       },
@@ -401,6 +669,9 @@ const options: swaggerJsdoc.Options = {
       { name: 'School', description: 'School role endpoints' },
       { name: 'Government', description: 'Government role endpoints' },
       { name: 'Student', description: 'Student role endpoints' },
+      { name: 'Event Categories', description: 'Event category management endpoints' },
+      { name: 'Events', description: 'Event management endpoints' },
+      { name: 'Missions', description: 'Mission management endpoints' },
     ],
     paths: {
       // ──────────── Auth (unified for all roles) ────────────
@@ -487,7 +758,7 @@ const options: swaggerJsdoc.Options = {
         get: {
           summary: 'Get onboarding dashboard summary (admin only)',
           description:
-            'Returns total, approved (active), and pending counts for schools and governments. Requires Admin JWT.',
+            'Returns total, approved (active), and pending counts for schools, governments, and students. Requires Admin JWT.',
           tags: ['Admin'],
           security: [{ bearerAuth: [] }],
           responses: {
@@ -823,7 +1094,7 @@ const options: swaggerJsdoc.Options = {
         post: {
           summary: 'Register a student',
           description:
-            'Creates a pending student account linked to an active school. Public endpoint.',
+            'Creates a pending student account linked to an active school via schoolId. Validates the school exists and is a school-role user. Public endpoint.',
           tags: ['Student'],
           requestBody: {
             required: true,
@@ -866,6 +1137,857 @@ const options: swaggerJsdoc.Options = {
                 },
               },
             },
+          },
+        },
+      },
+      '/api/v1/student': {
+        get: {
+          summary: 'List students (admin or student)',
+          description:
+            'Paginated student users with optional search, status, grade, and schoolId filters. Sorted newest first.',
+          tags: ['Student'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              required: false,
+              description: 'Search by full name, email, phone, class grade, school name, or city',
+              schema: { type: 'string', example: 'Rahul' },
+            },
+            {
+              name: 'status',
+              in: 'query',
+              required: false,
+              description: 'Filter by account status',
+              schema: {
+                type: 'string',
+                enum: ['pending', 'active', 'inactive', 'suspended'],
+                example: 'pending',
+              },
+            },
+            {
+              name: 'grade',
+              in: 'query',
+              required: false,
+              description: 'Filter by class/grade (matches classGrade)',
+              schema: { type: 'string', example: '10' },
+            },
+            {
+              name: 'schoolId',
+              in: 'query',
+              required: false,
+              description: 'Filter students by associated school ObjectId',
+              schema: { type: 'string', example: '687b008cc16d670962ee7b09' },
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, default: 1, example: 1 },
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10, example: 10 },
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Students fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/StudentsListResponse' },
+                },
+              },
+            },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin or student only' },
+          },
+        },
+      },
+      '/api/v1/student/{id}': {
+        get: {
+          summary: 'Get student details by ID (admin or student)',
+          description: 'Returns complete student profile details. Requires Admin or Student JWT.',
+          tags: ['Student'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              description: 'Student user MongoDB ObjectId',
+              schema: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e3' },
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Student details fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/StudentDetailsResponse' },
+                },
+              },
+            },
+            400: { description: 'Invalid ObjectId or invalid role' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin or student only' },
+            404: { description: 'User not found' },
+          },
+        },
+      },
+      '/api/v1/student/{id}/approve': {
+        patch: {
+          summary: 'Approve a pending student (admin only)',
+          description:
+            'Sets student status to active and isVerified to true. Only pending student users can be approved.',
+          tags: ['Student'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              description: 'Student user MongoDB ObjectId',
+              schema: { type: 'string', example: '65a1b2c3d4e5f6a7b8c9d0e3' },
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Student approved successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/ApproveUserResponse' },
+                },
+              },
+            },
+            400: {
+              description: 'Validation failed, invalid role, or student already approved',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'User not found' },
+          },
+        },
+      },
+
+      // ──────────── School ────────────
+      '/api/v1/school/students': {
+        get: {
+          summary: 'List students for the logged-in school',
+          description:
+            'Returns only students whose schoolId matches the authenticated school user. schoolId cannot be passed by the client. Supports search, status, grade filters and pagination.',
+          tags: ['School'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              required: false,
+              description: 'Search by student name, student ID, admission number, email, or phone',
+              schema: { type: 'string', example: 'Rahul' },
+            },
+            {
+              name: 'status',
+              in: 'query',
+              required: false,
+              description: 'Filter by account status',
+              schema: {
+                type: 'string',
+                enum: ['pending', 'active', 'inactive', 'suspended'],
+                example: 'pending',
+              },
+            },
+            {
+              name: 'grade',
+              in: 'query',
+              required: false,
+              description: 'Filter by class/grade (matches classGrade)',
+              schema: { type: 'string', example: '10' },
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, default: 1, example: 1 },
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10, example: 10 },
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Students fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/StudentsListResponse' },
+                },
+              },
+            },
+            400: { description: 'Validation failed (e.g. client sent schoolId)' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — school only' },
+          },
+        },
+      },
+      '/api/v1/school/events': {
+        get: {
+          summary: 'List events for the logged-in school',
+          description:
+            'Returns public events and private events where schoolIds contains the authenticated school userId. Supports search, filters, sorting, and pagination.',
+          tags: ['School'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search title, description, city',
+            },
+            { name: 'categoryId', in: 'query', schema: { type: 'string' } },
+            { name: 'city', in: 'query', schema: { type: 'string' } },
+            { name: 'fromDate', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'toDate', in: 'query', schema: { type: 'string', format: 'date' } },
+            {
+              name: 'eventType',
+              in: 'query',
+              schema: { type: 'string', enum: ['public', 'private'] },
+            },
+            {
+              name: 'sortBy',
+              in: 'query',
+              schema: { type: 'string', enum: ['eventDate', 'createdAt', 'title'] },
+            },
+            {
+              name: 'sortOrder',
+              in: 'query',
+              schema: { type: 'string', enum: ['asc', 'desc'] },
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+            {
+              name: 'limit',
+              in: 'query',
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+            },
+          ],
+          responses: {
+            200: { description: 'School events fetched successfully' },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — school only' },
+          },
+        },
+      },
+      '/api/v1/government/events': {
+        get: {
+          summary: 'List events for the logged-in government organization',
+          description:
+            'Returns public events and private events where governmentIds contains the authenticated government userId.',
+          tags: ['Government'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search title, description, city',
+            },
+            { name: 'categoryId', in: 'query', schema: { type: 'string' } },
+            { name: 'city', in: 'query', schema: { type: 'string' } },
+            { name: 'fromDate', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'toDate', in: 'query', schema: { type: 'string', format: 'date' } },
+            {
+              name: 'eventType',
+              in: 'query',
+              schema: { type: 'string', enum: ['public', 'private'] },
+            },
+            {
+              name: 'sortBy',
+              in: 'query',
+              schema: { type: 'string', enum: ['eventDate', 'createdAt', 'title'] },
+            },
+            {
+              name: 'sortOrder',
+              in: 'query',
+              schema: { type: 'string', enum: ['asc', 'desc'] },
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+            {
+              name: 'limit',
+              in: 'query',
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+            },
+          ],
+          responses: {
+            200: { description: 'Government events fetched successfully' },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — government only' },
+          },
+        },
+      },
+      '/api/v1/student/events': {
+        get: {
+          summary: 'List events for the logged-in student',
+          description:
+            'Returns public events and private events assigned to the student school (schoolIds contains student.schoolId).',
+          tags: ['Student'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search title, description, city',
+            },
+            { name: 'categoryId', in: 'query', schema: { type: 'string' } },
+            { name: 'city', in: 'query', schema: { type: 'string' } },
+            { name: 'fromDate', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'toDate', in: 'query', schema: { type: 'string', format: 'date' } },
+            {
+              name: 'eventType',
+              in: 'query',
+              schema: { type: 'string', enum: ['public', 'private'] },
+            },
+            {
+              name: 'sortBy',
+              in: 'query',
+              schema: { type: 'string', enum: ['eventDate', 'createdAt', 'title'] },
+            },
+            {
+              name: 'sortOrder',
+              in: 'query',
+              schema: { type: 'string', enum: ['asc', 'desc'] },
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+            {
+              name: 'limit',
+              in: 'query',
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+            },
+          ],
+          responses: {
+            200: { description: 'Student events fetched successfully' },
+            400: { description: 'Validation failed or student not linked to a school' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — student only' },
+          },
+        },
+      },
+
+      // ──────────── Event Categories ────────────
+      '/api/v1/event-categories': {
+        post: {
+          summary: 'Create event category (admin only)',
+          tags: ['Event Categories'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/CreateEventCategoryRequest' },
+              },
+            },
+          },
+          responses: {
+            201: { description: 'Category created successfully' },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            409: { description: 'Category name already exists' },
+          },
+        },
+        get: {
+          summary: 'List event categories (admin only)',
+          description:
+            'Paginated listing with search, is_active filter, and sorting. Default sort: sort_order ASC, createdAt DESC.',
+          tags: ['Event Categories'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', example: 'Crime' },
+            },
+            {
+              name: 'is_active',
+              in: 'query',
+              required: false,
+              schema: { type: 'boolean', example: true },
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, default: 1 },
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+            },
+            {
+              name: 'sort_by',
+              in: 'query',
+              required: false,
+              schema: {
+                type: 'string',
+                enum: ['name', 'sort_order', 'createdAt', 'updatedAt', 'is_active'],
+              },
+            },
+            {
+              name: 'sort_order',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', enum: ['asc', 'desc'] },
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Categories fetched successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/EventCategoryListResponse' },
+                },
+              },
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+          },
+        },
+      },
+      '/api/v1/event-categories/dropdown': {
+        get: {
+          summary: 'Active categories dropdown (authenticated)',
+          description:
+            'Returns only active categories sorted by sort_order ASC for event creation.',
+          tags: ['Event Categories'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: 'Category dropdown fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string' },
+                      data: {
+                        type: 'array',
+                        items: { $ref: '#/components/schemas/EventCategoryDropdownItem' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            401: { description: 'Unauthorized' },
+          },
+        },
+      },
+      '/api/v1/event-categories/{id}': {
+        get: {
+          summary: 'Get category details (admin only)',
+          tags: ['Event Categories'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          responses: {
+            200: { description: 'Category details fetched successfully' },
+            400: { description: 'Invalid ObjectId' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'Category not found' },
+          },
+        },
+        put: {
+          summary: 'Update category (admin only)',
+          tags: ['Event Categories'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/CreateEventCategoryRequest' },
+              },
+            },
+          },
+          responses: {
+            200: { description: 'Category updated successfully' },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'Category not found' },
+            409: { description: 'Category name already exists' },
+          },
+        },
+        delete: {
+          summary: 'Delete category (admin only)',
+          description: 'Permanently deletes a category if it is not referenced by any event.',
+          tags: ['Event Categories'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          responses: {
+            200: { description: 'Category deleted successfully' },
+            400: { description: 'Category is associated with events' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'Category not found' },
+          },
+        },
+      },
+      '/api/v1/event-categories/{id}/status': {
+        patch: {
+          summary: 'Activate or deactivate category (admin only)',
+          tags: ['Event Categories'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/UpdateEventCategoryStatusRequest' },
+              },
+            },
+          },
+          responses: {
+            200: { description: 'Category activated/deactivated successfully' },
+            400: { description: 'Validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'Category not found' },
+          },
+        },
+      },
+
+      // ──────────── Events ────────────
+      '/api/v1/events/mission-dropdown': {
+        get: {
+          summary: 'Mission event dropdown (admin only)',
+          description:
+            'Returns active events whose eventDate falls within the last 7 days up to now. Sorted by eventDate newest first. Supports search by title and pagination.',
+          tags: ['Events', 'Missions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'search', in: 'query', schema: { type: 'string' } },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: { description: 'Mission event dropdown fetched successfully' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+          },
+        },
+      },
+      '/api/v1/events': {
+        post: {
+          summary: 'Create event (admin only)',
+          tags: ['Events'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/CreateEventRequest' } },
+            },
+          },
+          responses: {
+            201: { description: 'Event created successfully' },
+            400: { description: 'Validation failed or invalid references' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+          },
+        },
+        get: {
+          summary: 'List events (admin only)',
+          tags: ['Events'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'search', in: 'query', schema: { type: 'string' } },
+            { name: 'categoryId', in: 'query', schema: { type: 'string' } },
+            { name: 'city', in: 'query', schema: { type: 'string' } },
+            { name: 'eventDate', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'schoolId', in: 'query', schema: { type: 'string' } },
+            { name: 'governmentId', in: 'query', schema: { type: 'string' } },
+            {
+              name: 'eventType',
+              in: 'query',
+              schema: { type: 'string', enum: ['public', 'private'] },
+            },
+            { name: 'is_active', in: 'query', schema: { type: 'boolean' } },
+            {
+              name: 'sort_by',
+              in: 'query',
+              schema: { type: 'string', enum: ['eventDate', 'createdAt', 'title'] },
+            },
+            {
+              name: 'sort_order',
+              in: 'query',
+              schema: { type: 'string', enum: ['asc', 'desc'] },
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: { description: 'Events fetched successfully' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+          },
+        },
+      },
+      '/api/v1/events/{id}': {
+        get: {
+          summary: 'Get event details (admin only)',
+          tags: ['Events'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'Event details fetched successfully' },
+            404: { description: 'Event not found' },
+          },
+        },
+        put: {
+          summary: 'Update event (admin only)',
+          tags: ['Events'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/CreateEventRequest' } },
+            },
+          },
+          responses: {
+            200: { description: 'Event updated successfully' },
+            404: { description: 'Event not found' },
+          },
+        },
+        delete: {
+          summary: 'Delete event (admin only)',
+          tags: ['Events'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'Event deleted successfully' },
+            404: { description: 'Event not found' },
+          },
+        },
+      },
+      '/api/v1/government/dropdown': {
+        get: {
+          summary: 'Government organizations dropdown (authenticated)',
+          description:
+            'Paginated active government organizations with search and filters. Defaults to active only.',
+          tags: ['Government'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'search', in: 'query', schema: { type: 'string' } },
+            { name: 'city', in: 'query', schema: { type: 'string' } },
+            { name: 'department', in: 'query', schema: { type: 'string' } },
+            { name: 'state', in: 'query', schema: { type: 'string' } },
+            { name: 'is_active', in: 'query', schema: { type: 'boolean' } },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: { description: 'Government organizations fetched successfully' },
+            401: { description: 'Unauthorized' },
+          },
+        },
+      },
+      '/api/v1/government/schools': {
+        get: {
+          summary: 'List all schools (government only)',
+          description:
+            'Paginated schools list for government users. Defaults to active schools. Supports search, city, and state filters.',
+          tags: ['Government'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search by school name, full name, email, or city',
+            },
+            { name: 'city', in: 'query', schema: { type: 'string' } },
+            { name: 'state', in: 'query', schema: { type: 'string' } },
+            { name: 'is_active', in: 'query', schema: { type: 'boolean' } },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: { description: 'Schools fetched successfully' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — government only' },
+          },
+        },
+      },
+
+      // ──────────── Missions ────────────
+      '/api/v1/missions': {
+        post: {
+          summary: 'Create mission (admin only)',
+          tags: ['Missions'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/CreateMissionRequest' } },
+            },
+          },
+          responses: {
+            201: { description: 'Mission created successfully' },
+            400: {
+              description: 'Validation failed, event not found, inactive, or older than 7 days',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+          },
+        },
+        get: {
+          summary: 'List missions (admin only)',
+          tags: ['Missions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search mission title, description, or event title',
+            },
+            {
+              name: 'difficulty',
+              in: 'query',
+              schema: { type: 'string', enum: ['Easy', 'Medium', 'Hard'] },
+            },
+            { name: 'eventId', in: 'query', schema: { type: 'string' } },
+            { name: 'is_active', in: 'query', schema: { type: 'boolean' } },
+            {
+              name: 'fromDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by deadline from date',
+            },
+            {
+              name: 'toDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by deadline to date',
+            },
+            { name: 'minRewardPoints', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'maxRewardPoints', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            {
+              name: 'sortBy',
+              in: 'query',
+              schema: {
+                type: 'string',
+                enum: ['createdAt', 'deadline', 'rewardPoints', 'title'],
+              },
+            },
+            {
+              name: 'sortOrder',
+              in: 'query',
+              schema: { type: 'string', enum: ['asc', 'desc'] },
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: { description: 'Mission list fetched successfully' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+          },
+        },
+      },
+      '/api/v1/missions/{id}': {
+        get: {
+          summary: 'Get mission details (admin only)',
+          tags: ['Missions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: {
+              description: 'Mission details fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/MissionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            404: { description: 'Mission not found' },
+          },
+        },
+        put: {
+          summary: 'Update mission (admin only)',
+          tags: ['Missions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/CreateMissionRequest' } },
+            },
+          },
+          responses: {
+            200: { description: 'Mission updated successfully' },
+            400: {
+              description: 'Validation failed, event not found, inactive, or older than 7 days',
+            },
+            404: { description: 'Mission not found' },
+          },
+        },
+        delete: {
+          summary: 'Delete mission (admin only)',
+          tags: ['Missions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'Mission deleted successfully' },
+            404: { description: 'Mission not found' },
           },
         },
       },

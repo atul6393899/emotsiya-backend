@@ -50,3 +50,39 @@ export const registerStudentValidation = Joi.object({
   email,
   phone,
 });
+
+const objectId = Joi.string()
+  .pattern(/^[0-9a-fA-F]{24}$/)
+  .required()
+  .messages({
+    'string.pattern.base': 'id must be a valid MongoDB ObjectId',
+    'any.required': 'id is required',
+    'string.empty': 'id is required',
+  });
+
+export const studentIdParamsValidation = Joi.object({
+  id: objectId,
+});
+
+export const studentListQueryValidation = Joi.object({
+  search: Joi.string().trim().allow('').optional(),
+  page: Joi.number().integer().min(1).optional().messages({
+    'number.base': 'page must be a number',
+    'number.min': 'page must be at least 1',
+  }),
+  limit: Joi.number().integer().min(1).max(100).optional().messages({
+    'number.base': 'limit must be a number',
+    'number.min': 'limit must be at least 1',
+    'number.max': 'limit must not exceed 100',
+  }),
+  status: Joi.string().valid('pending', 'active', 'inactive', 'suspended').optional().messages({
+    'any.only': 'status must be one of pending, active, inactive, suspended',
+  }),
+  grade: Joi.string().trim().allow('').optional(),
+  schoolId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'schoolId must be a valid MongoDB ObjectId',
+    }),
+});

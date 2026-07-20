@@ -8,6 +8,7 @@ export type InstitutionType = 'Government' | 'Private' | 'Semi-Government';
 export interface IUserProfile {
   // Student fields
   schoolName?: string;
+  admissionNumber?: string;
 
   // School & Government fields
   institutionName?: string;
@@ -32,6 +33,7 @@ export interface IUserDocument extends Document<Types.ObjectId> {
   role: Role;
   email: string;
   phone?: string;
+  schoolId?: Types.ObjectId | null;
   currentToken?: string | null;
   isVerified: boolean;
   profile?: IUserProfile;
@@ -82,6 +84,12 @@ const userSchema = new Schema<IUserDocument>(
       trim: true,
       match: [/^\d{10}$/, 'Please enter a valid 10-digit phone number'],
     },
+    schoolId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
     currentToken: {
       type: String,
       select: false,
@@ -96,6 +104,7 @@ const userSchema = new Schema<IUserDocument>(
     profile: {
       // Student fields
       schoolName: { type: String, trim: true },
+      admissionNumber: { type: String, trim: true },
 
       // School & Government fields
       institutionName: { type: String, trim: true },
@@ -134,5 +143,6 @@ const userSchema = new Schema<IUserDocument>(
 userSchema.index({ phone: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
+userSchema.index({ role: 1, schoolId: 1, createdAt: -1 });
 
 export const User: Model<IUserDocument> = mongoose.model<IUserDocument>('User', userSchema);

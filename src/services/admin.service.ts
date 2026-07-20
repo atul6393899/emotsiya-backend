@@ -86,6 +86,7 @@ export interface IRoleStatusSummary {
 export interface IOnboardingDashboardSummary {
   schools: IRoleStatusSummary;
   governments: IRoleStatusSummary;
+  students: IRoleStatusSummary;
 }
 
 export interface IOnboardingSchoolsResponse {
@@ -185,12 +186,13 @@ export class AdminService {
   }
 
   async getOnboardingDashboardSummary(): Promise<IOnboardingDashboardSummary> {
-    const [schools, governments] = await Promise.all([
+    const [schools, governments, students] = await Promise.all([
       this.getRoleStatusSummary(ROLES.SCHOOL),
       this.getRoleStatusSummary(ROLES.GOVERNMENT),
+      this.getRoleStatusSummary(ROLES.STUDENT),
     ]);
 
-    return { schools, governments };
+    return { schools, governments, students };
   }
 
   async getOnboardingSchools(

@@ -13,7 +13,11 @@ import routes from './routes/index';
 const app = express();
 
 // Security middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Allow Swagger UI assets
+  }),
+);
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || '*',
@@ -47,6 +51,9 @@ app.use(mongoSanitize());
 app.use(morgan('combined', { stream: morganStream }));
 
 // API docs
+app.get('/', (_req, res) => {
+  res.redirect('/api-docs');
+});
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check
