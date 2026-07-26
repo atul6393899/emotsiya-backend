@@ -31,6 +31,14 @@ if (lanIp) {
   });
 }
 
+const ngrokUrl =
+  process.env.NGROK_URL?.replace(/\/$/, '') || 'https://scoundrel-drinking-recycler.ngrok-free.dev';
+
+servers.push({
+  url: ngrokUrl,
+  description: 'ngrok public URL',
+});
+
 const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
@@ -621,6 +629,102 @@ const options: swaggerJsdoc.Options = {
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
+        TaskSubmissionProof: {
+          type: 'object',
+          required: ['fileName', 'originalName', 'fileUrl', 'fileType', 'fileSize'],
+          properties: {
+            fileName: { type: 'string', example: 'tree.jpg' },
+            originalName: { type: 'string', example: 'tree.jpg' },
+            fileUrl: {
+              type: 'string',
+              format: 'uri',
+              example: 'https://example.com/uploads/tree.jpg',
+            },
+            fileType: { type: 'string', example: 'image/jpeg' },
+            fileSize: { type: 'integer', minimum: 0, example: 254210 },
+          },
+        },
+        SubmitTaskRequest: {
+          type: 'object',
+          required: ['taskId', 'description', 'proof'],
+          properties: {
+            taskId: { type: 'string', example: '66ab123456789012345678ab' },
+            description: {
+              type: 'string',
+              maxLength: 2000,
+              example: 'I planted 10 trees in my locality.',
+            },
+            proof: { $ref: '#/components/schemas/TaskSubmissionProof' },
+          },
+        },
+        ReviewTaskSubmissionRequest: {
+          type: 'object',
+          required: ['status'],
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['under_review', 'approved', 'rejected'],
+              example: 'approved',
+            },
+            reviewComment: { type: 'string', maxLength: 2000, example: 'Excellent work.' },
+            rejectionReason: {
+              type: 'string',
+              maxLength: 2000,
+              description: 'Required when status is rejected',
+              example: 'Uploaded image is unclear.',
+            },
+            pointsEarned: { type: 'integer', minimum: 0, example: 50 },
+            badgeAwarded: { type: 'boolean', example: true },
+          },
+        },
+        TaskSubmissionResponse: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            student: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                _id: { type: 'string' },
+                fullName: { type: 'string' },
+                email: { type: 'string' },
+                schoolId: { type: 'string', nullable: true },
+              },
+            },
+            studentName: { type: 'string' },
+            task: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                _id: { type: 'string' },
+                title: { type: 'string' },
+              },
+            },
+            taskTitle: { type: 'string' },
+            description: { type: 'string' },
+            proof: { $ref: '#/components/schemas/TaskSubmissionProof' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'under_review', 'approved', 'rejected'],
+            },
+            reviewedBy: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                _id: { type: 'string' },
+                fullName: { type: 'string' },
+                email: { type: 'string' },
+              },
+            },
+            reviewedAt: { type: 'string', format: 'date-time', nullable: true },
+            reviewComment: { type: 'string', nullable: true },
+            rejectionReason: { type: 'string', nullable: true },
+            pointsEarned: { type: 'integer' },
+            badgeAwarded: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
         EventResponse: {
           type: 'object',
           properties: {
@@ -661,6 +765,172 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        StudentEventResponse: {
+          type: 'object',
+          properties: {
+            eventId: { type: 'string' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            eventDate: { type: 'string', format: 'date-time' },
+            city: { type: 'string' },
+            status: {
+              type: 'string',
+              enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
+            },
+            totalParticipants: { type: 'integer' },
+          },
+        },
+        JoinedEventResponse: {
+          type: 'object',
+          properties: {
+            event: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                _id: { type: 'string' },
+                title: { type: 'string' },
+                description: { type: 'string' },
+                eventDate: { type: 'string', format: 'date-time' },
+                city: { type: 'string' },
+                status: {
+                  type: 'string',
+                  enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
+                },
+                totalParticipants: { type: 'integer' },
+              },
+            },
+            joinedAt: { type: 'string', format: 'date-time' },
+            attendanceStatus: {
+              type: 'string',
+              enum: ['registered', 'attended', 'absent'],
+            },
+          },
+        },
+        CreateExpertSessionRequest: {
+          type: 'object',
+          required: [
+            'title',
+            'description',
+            'expertName',
+            'sessionDate',
+            'startTime',
+            'endTime',
+            'zoomLink',
+          ],
+          properties: {
+            title: {
+              type: 'string',
+              maxLength: 200,
+              example: 'Career Guidance with Industry Experts',
+            },
+            description: {
+              type: 'string',
+              example: 'An interactive session on building a career in tech.',
+            },
+            expertName: { type: 'string', example: 'Dr. Anita Rao' },
+            sessionDate: {
+              type: 'string',
+              format: 'date',
+              description: 'Must fall on a Saturday or Sunday',
+              example: '2026-08-01',
+            },
+            startTime: { type: 'string', example: '10:00', description: 'HH:mm (24-hour)' },
+            endTime: { type: 'string', example: '11:30', description: 'HH:mm (24-hour)' },
+            zoomLink: { type: 'string', format: 'uri', example: 'https://zoom.us/j/1234567890' },
+            zoomMeetingId: { type: 'string', example: '123 4567 890' },
+            zoomPassword: { type: 'string', example: 'expert123' },
+          },
+        },
+        UpdateExpertSessionRequest: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', maxLength: 200 },
+            description: { type: 'string' },
+            expertName: { type: 'string' },
+            sessionDate: {
+              type: 'string',
+              format: 'date',
+              description: 'Must fall on a Saturday or Sunday',
+            },
+            startTime: { type: 'string', description: 'HH:mm (24-hour)' },
+            endTime: { type: 'string', description: 'HH:mm (24-hour)' },
+            zoomLink: { type: 'string', format: 'uri' },
+            zoomMeetingId: { type: 'string' },
+            zoomPassword: { type: 'string' },
+            status: {
+              type: 'string',
+              enum: ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'],
+            },
+            is_active: { type: 'boolean' },
+          },
+        },
+        ExpertSessionResponse: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            expertName: { type: 'string' },
+            sessionDate: { type: 'string', format: 'date-time' },
+            startTime: { type: 'string' },
+            endTime: { type: 'string' },
+            zoomLink: { type: 'string' },
+            zoomMeetingId: { type: 'string', nullable: true },
+            zoomPassword: {
+              type: 'string',
+              nullable: true,
+              description: 'Returned in details only',
+            },
+            status: {
+              type: 'string',
+              enum: ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'],
+            },
+            is_active: { type: 'boolean' },
+            totalJoined: {
+              type: 'integer',
+              example: 25,
+              description: 'Total number of users who have joined this session',
+            },
+            hasJoined: {
+              type: 'boolean',
+              example: false,
+              description: 'Whether the currently authenticated user has joined this session',
+            },
+            created_by: { type: 'string', nullable: true },
+            updated_by: { type: 'string', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        JoinExpertSessionResponse: {
+          type: 'object',
+          properties: {
+            sessionId: { type: 'string' },
+            joinedAt: { type: 'string', format: 'date-time' },
+            totalJoined: { type: 'integer', example: 25 },
+          },
+        },
+        ExpertSessionJoinCountResponse: {
+          type: 'object',
+          properties: {
+            sessionId: { type: 'string' },
+            title: { type: 'string' },
+            totalJoined: { type: 'integer', example: 25 },
+          },
+        },
+        ExpertSessionParticipantItem: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            userId: { type: 'string' },
+            userName: { type: 'string', example: 'Rahul Sharma' },
+            userRole: {
+              type: 'string',
+              enum: ['admin', 'school', 'government', 'student'],
+            },
+            joinedAt: { type: 'string', format: 'date-time' },
+          },
+        },
       },
     },
     tags: [
@@ -671,7 +941,17 @@ const options: swaggerJsdoc.Options = {
       { name: 'Student', description: 'Student role endpoints' },
       { name: 'Event Categories', description: 'Event category management endpoints' },
       { name: 'Events', description: 'Event management endpoints' },
+      {
+        name: 'Event Participation',
+        description: 'Student event participation endpoints (join, upcoming, joined)',
+      },
       { name: 'Missions', description: 'Mission management endpoints' },
+      { name: 'Task Submissions', description: 'Task submission and review endpoints' },
+      {
+        name: 'Expert Sessions',
+        description:
+          'Expert session management, join tracking, and participant counts (admin CRUD; all roles can view/join)',
+      },
     ],
     paths: {
       // ──────────── Auth (unified for all roles) ────────────
@@ -1810,6 +2090,110 @@ const options: swaggerJsdoc.Options = {
           },
         },
       },
+      // ──────────── Student Event Participation ────────────
+      '/api/v1/events/student/events': {
+        get: {
+          summary: 'List upcoming/ongoing events for the student\u2019s school (student only)',
+          description:
+            "Returns only upcoming and ongoing events belonging to the logged-in student's school, sorted by nearest event date.",
+          tags: ['Event Participation'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: 'Student events fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: {
+                        type: 'array',
+                        items: { $ref: '#/components/schemas/StudentEventResponse' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — student only' },
+          },
+        },
+      },
+      '/api/v1/events/student/events/my-events': {
+        get: {
+          summary: 'List events joined by the student (student only)',
+          description:
+            'Returns all events the logged-in student has joined, with joined date and attendance status.',
+          tags: ['Event Participation'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: 'Joined events fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: {
+                        type: 'array',
+                        items: { $ref: '#/components/schemas/JoinedEventResponse' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — student only' },
+          },
+        },
+      },
+      '/api/v1/events/student/events/{id}/join': {
+        post: {
+          summary: 'Join an event (student only)',
+          description:
+            "Registers the logged-in student for an event of their school. The event must belong to the student's school and must not be completed or cancelled.",
+          tags: ['Event Participation'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Event ID',
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Event joined successfully.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string', example: 'Event joined successfully.' },
+                    },
+                  },
+                },
+              },
+            },
+            400: {
+              description: 'Invalid ObjectId, validation failed, or event completed/cancelled',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — student only, or event not in student\u2019s school' },
+            404: { description: 'Event not found' },
+            409: { description: 'Already joined or maximum participants reached' },
+          },
+        },
+      },
       '/api/v1/government/dropdown': {
         get: {
           summary: 'Government organizations dropdown (authenticated)',
@@ -1936,6 +2320,64 @@ const options: swaggerJsdoc.Options = {
           },
         },
       },
+      '/api/v1/missions/student': {
+        get: {
+          summary: 'List missions of the student\u2019s school events (student only)',
+          description:
+            "Returns active missions attached to events associated with the logged-in student's school (public events or events privately linked to their school). Automatically scoped to the student's school.",
+          tags: ['Missions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search mission title, description, or event title',
+            },
+            {
+              name: 'difficulty',
+              in: 'query',
+              schema: { type: 'string', enum: ['Easy', 'Medium', 'Hard'] },
+            },
+            { name: 'eventId', in: 'query', schema: { type: 'string' } },
+            {
+              name: 'fromDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by deadline from date',
+            },
+            {
+              name: 'toDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by deadline to date',
+            },
+            { name: 'minRewardPoints', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'maxRewardPoints', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            {
+              name: 'sortBy',
+              in: 'query',
+              schema: {
+                type: 'string',
+                enum: ['createdAt', 'deadline', 'rewardPoints', 'title'],
+              },
+            },
+            {
+              name: 'sortOrder',
+              in: 'query',
+              schema: { type: 'string', enum: ['asc', 'desc'] },
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: { description: 'Student missions fetched successfully' },
+            400: { description: 'Student is not linked to a school' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — student only' },
+          },
+        },
+      },
       '/api/v1/missions/{id}': {
         get: {
           summary: 'Get mission details (admin only)',
@@ -1988,6 +2430,534 @@ const options: swaggerJsdoc.Options = {
           responses: {
             200: { description: 'Mission deleted successfully' },
             404: { description: 'Mission not found' },
+          },
+        },
+      },
+      // ──────────── Task Submissions ────────────
+      '/api/v1/task-submissions': {
+        post: {
+          summary: 'Submit a task (student only)',
+          description:
+            'Submit a task with a proof image. Send as multipart/form-data; the `proof` image is uploaded to AWS S3 and its metadata is stored on the submission.',
+          tags: ['Task Submissions'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'multipart/form-data': {
+                schema: {
+                  type: 'object',
+                  required: ['taskId', 'description', 'proof'],
+                  properties: {
+                    taskId: { type: 'string', example: '66ab123456789012345678ab' },
+                    description: {
+                      type: 'string',
+                      maxLength: 2000,
+                      example: 'I planted 10 trees in my locality.',
+                    },
+                    proof: {
+                      type: 'string',
+                      format: 'binary',
+                      description: 'Proof image file (jpeg, png, webp, gif — max 5 MB)',
+                    },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            201: {
+              description: 'Task submitted successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/TaskSubmissionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: { description: 'Validation failed or invalid ObjectId' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — student only, or task does not belong to student' },
+            404: { description: 'Task not found' },
+            409: { description: 'Duplicate submission — task already submitted' },
+          },
+        },
+        get: {
+          summary: 'List task submissions (admin: all, school: own students, student: own)',
+          tags: ['Task Submissions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'schoolId',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Admin only — filter by school',
+            },
+            {
+              name: 'studentId',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Filter by student (admin / school)',
+            },
+            { name: 'taskId', in: 'query', schema: { type: 'string' } },
+            {
+              name: 'status',
+              in: 'query',
+              schema: {
+                type: 'string',
+                enum: ['pending', 'under_review', 'approved', 'rejected'],
+              },
+            },
+            {
+              name: 'fromDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by submission date from',
+            },
+            {
+              name: 'toDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by submission date to',
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: {
+              description: 'Task submissions fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: {
+                        type: 'object',
+                        properties: {
+                          submissions: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/TaskSubmissionResponse' },
+                          },
+                          pagination: {
+                            type: 'object',
+                            properties: {
+                              page: { type: 'integer' },
+                              limit: { type: 'integer' },
+                              total: { type: 'integer' },
+                              totalPages: { type: 'integer' },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden' },
+          },
+        },
+      },
+      '/api/v1/task-submissions/{id}': {
+        get: {
+          summary: 'Get task submission details (role-scoped access)',
+          tags: ['Task Submissions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: {
+              description: 'Task submission details fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/TaskSubmissionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: { description: 'Invalid ObjectId' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — not permitted to access this submission' },
+            404: { description: 'Task submission not found' },
+          },
+        },
+      },
+      '/api/v1/task-submissions/{id}/review': {
+        patch: {
+          summary: 'Review a task submission (school only)',
+          tags: ['Task Submissions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ReviewTaskSubmissionRequest' },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: 'Task submission reviewed successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/TaskSubmissionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: { description: 'Validation failed or invalid ObjectId' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — school only, or student does not belong to school' },
+            404: { description: 'Task submission not found' },
+            409: { description: 'Submission already reviewed and can no longer be reviewed' },
+          },
+        },
+      },
+      // ──────────── Expert Sessions ────────────
+      '/api/v1/expert-sessions': {
+        post: {
+          summary: 'Create expert session (admin only)',
+          description:
+            'Creates an expert session. sessionDate must fall on a Saturday or Sunday, zoomLink must be a valid URL, and endTime must be greater than startTime.',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/CreateExpertSessionRequest' },
+              },
+            },
+          },
+          responses: {
+            201: {
+              description: 'Expert session created successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/ExpertSessionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: {
+              description:
+                'Validation failed, sessionDate not on Saturday/Sunday, invalid Zoom link, or endTime <= startTime',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+          },
+        },
+        get: {
+          summary: 'List expert sessions (all roles)',
+          description:
+            'Returns expert sessions to any authenticated user. Non-admin roles only see active sessions. Sorted by nearest sessionDate.',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search title, description, or expertName',
+            },
+            {
+              name: 'status',
+              in: 'query',
+              schema: {
+                type: 'string',
+                enum: ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'],
+              },
+            },
+            {
+              name: 'fromDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by sessionDate from',
+            },
+            {
+              name: 'toDate',
+              in: 'query',
+              schema: { type: 'string', format: 'date' },
+              description: 'Filter by sessionDate to',
+            },
+            {
+              name: 'is_active',
+              in: 'query',
+              schema: { type: 'boolean' },
+              description: 'Admin only — non-admins are always scoped to active',
+            },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            200: {
+              description: 'Expert sessions fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: {
+                        type: 'object',
+                        properties: {
+                          sessions: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/ExpertSessionResponse' },
+                          },
+                          pagination: {
+                            type: 'object',
+                            properties: {
+                              page: { type: 'integer' },
+                              limit: { type: 'integer' },
+                              total: { type: 'integer' },
+                              totalPages: { type: 'integer' },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden' },
+          },
+        },
+      },
+      '/api/v1/expert-sessions/{id}': {
+        get: {
+          summary: 'Get expert session details (all roles)',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: {
+              description: 'Expert session details fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/ExpertSessionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: { description: 'Invalid ObjectId' },
+            401: { description: 'Unauthorized' },
+            404: { description: 'Expert session not found' },
+          },
+        },
+        put: {
+          summary: 'Update expert session (admin only)',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/UpdateExpertSessionRequest' },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: 'Expert session updated successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/ExpertSessionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: {
+              description:
+                'Validation failed, sessionDate not on Saturday/Sunday, invalid Zoom link, or endTime <= startTime',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'Expert session not found' },
+          },
+        },
+        delete: {
+          summary: 'Delete expert session (admin only)',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'Expert session deleted successfully' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'Expert session not found' },
+          },
+        },
+      },
+      '/api/v1/expert-sessions/{id}/join': {
+        post: {
+          summary: 'Join an expert session (all roles)',
+          description:
+            'Registers the authenticated user for an expert session. Session must be active and status must be UPCOMING or ONGOING. Duplicate joins are rejected.',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: {
+              description: 'Joined expert session successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/JoinExpertSessionResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: {
+              description: 'Invalid ObjectId, session inactive, completed, or cancelled',
+            },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden' },
+            404: { description: 'Expert session not found' },
+            409: { description: 'Already joined this session' },
+          },
+        },
+      },
+      '/api/v1/expert-sessions/{id}/join-count': {
+        get: {
+          summary: 'Get expert session join count (all roles)',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: {
+              description: 'Join count fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: { $ref: '#/components/schemas/ExpertSessionJoinCountResponse' },
+                    },
+                  },
+                },
+              },
+            },
+            400: { description: 'Invalid ObjectId' },
+            401: { description: 'Unauthorized' },
+            404: { description: 'Expert session not found' },
+          },
+        },
+      },
+      '/api/v1/expert-sessions/{id}/participants': {
+        get: {
+          summary: 'List session participants (admin only)',
+          description:
+            'Returns paginated participants for an expert session. Supports filtering by role and searching by userName.',
+          tags: ['Expert Sessions'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+            { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
+            {
+              name: 'role',
+              in: 'query',
+              schema: {
+                type: 'string',
+                enum: ['admin', 'school', 'government', 'student'],
+              },
+            },
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Search by userName',
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Session participants fetched successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      message: { type: 'string' },
+                      data: {
+                        type: 'object',
+                        properties: {
+                          participants: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/ExpertSessionParticipantItem' },
+                          },
+                          pagination: {
+                            type: 'object',
+                            properties: {
+                              page: { type: 'integer' },
+                              limit: { type: 'integer' },
+                              total: { type: 'integer' },
+                              totalPages: { type: 'integer' },
+                            },
+                          },
+                          totalJoined: { type: 'integer' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            400: { description: 'Invalid ObjectId or validation failed' },
+            401: { description: 'Unauthorized' },
+            403: { description: 'Forbidden — admin only' },
+            404: { description: 'Expert session not found' },
           },
         },
       },

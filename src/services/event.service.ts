@@ -1,7 +1,8 @@
 import { Types } from 'mongoose';
-import { Event, IEventDocument, EventType } from '../models/event.model';
+import { Event, IEventDocument, EventType, EventStatus } from '../models/event.model';
 import { EventCategory } from '../models/eventcategory.model';
 import { User } from '../models/user.model';
+import { EventParticipant, AttendanceStatus } from '../models/eventParticipant.model';
 import { ApiError } from '../utils/ApiError';
 import { HTTP_STATUS } from '../utils/constants';
 import { isValidObjectId, getPaginationParams, buildPaginationMeta } from '../utils/helpers';
@@ -94,6 +95,30 @@ export interface IEventListResponse {
   };
 }
 
+export interface IStudentEventResponse {
+  eventId: string;
+  title: string;
+  description: string;
+  eventDate: Date | string;
+  city: string;
+  status: EventStatus;
+  totalParticipants: number;
+}
+
+export interface IJoinedEventResponse {
+  event: {
+    _id: string;
+    title: string;
+    description: string;
+    eventDate: Date | string;
+    city: string;
+    status: EventStatus;
+    totalParticipants: number;
+  } | null;
+  joinedAt: Date | string;
+  attendanceStatus: AttendanceStatus;
+}
+
 const uniqueObjectIds = (ids: string[] = []): Types.ObjectId[] => {
   const unique = [...new Set(ids.filter(Boolean).map((id) => id.trim()))];
   return unique.map((id) => new Types.ObjectId(id));
@@ -155,22 +180,94 @@ export class EventService {
     studentUserId: string,
     query: IEventListQuery = {},
   ): Promise<IEventListResponse> {
-    if (!studentUserId || !isValidObjectId(studentUserId)) {
-      throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+    const { schoolId } = await this.resolveStudent(studentUserId);
+    return this.listEvents(query, { type: 'student', schoolId });
+  }
+
+  /**
+   * API 1 — Upcoming/ongoing events for the logged-in student's school.
+   * Automatically scoped to the student's school and sorted by nearest event date.
+   */
+  async getStudentEvents(studentUserId: string): Promise<IStudentEventResponse[]> {
+    const { schoolId } = await this.resolveStudent(studentUserId);
+
+    const visibility = this.buildVisibilityFilter({ type: 'student', schoolId });
+    const filter: Record<string, unknown> = {
+      ...(visibility ?? {}),
+      is_active: true,
+      status: { $in: ['upcoming', 'ongoing'] as EventStatus[] },
+    };
+
+    const events = await Event.find(filter)
+      .select('_id title description eventDate city status totalParticipants')
+      .sort({ eventDate: 1 })
+      .lean();
+
+    return events.map((event) => ({
+      eventId: (event._id as { toString(): string }).toString(),
+      title: event.title,
+      description: event.description,
+      eventDate: event.eventDate,
+      city: event.city,
+      status: event.status as EventStatus,
+      totalParticipants: (event.totalParticipants as number) ?? 0,
+    }));
+  }
+
+  /**
+   * API 2 — Register the logged-in student for an event of their school.
+   */
+  async joinEvent(studentUserId: string, eventId: string): Promise<void> {
+    const student = await this.resolveStudent(studentUserId);
+    const event = await this.findEventById(eventId);
+
+    this.assertEventBelongsToSchool(event, student.schoolId);
+
+    if (event.status === 'completed' || event.status === 'cancelled') {
+      throw new ApiError(
+        HTTP_STATUS.BAD_REQUEST,
+        `Event has been ${event.status} and can no longer be joined`,
+      );
     }
 
-    const student = await User.findById(studentUserId).select('role schoolId').lean();
-    if (!student || student.role !== ROLES.STUDENT) {
-      throw new ApiError(HTTP_STATUS.FORBIDDEN, 'Student access only');
-    }
-    if (!student.schoolId) {
-      throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Student is not linked to a school');
+    await this.assertNotAlreadyJoined(event._id.toString(), student._id);
+
+    if (event.maxParticipants > 0 && event.totalParticipants >= event.maxParticipants) {
+      throw new ApiError(HTTP_STATUS.CONFLICT, 'Maximum participants reached for this event');
     }
 
-    return this.listEvents(query, {
-      type: 'student',
-      schoolId: student.schoolId.toString(),
-    });
+    try {
+      await EventParticipant.create({
+        eventId: event._id,
+        studentId: student._id,
+        studentName: student.fullName,
+        schoolId: student.schoolId ? new Types.ObjectId(student.schoolId) : null,
+        joinedAt: new Date(),
+        attendanceStatus: 'registered',
+      });
+    } catch (error) {
+      // Guard against a race hitting the unique (eventId, studentId) index.
+      if ((error as { code?: number }).code === 11000) {
+        throw new ApiError(HTTP_STATUS.CONFLICT, 'You have already joined this event');
+      }
+      throw error;
+    }
+
+    await Event.updateOne({ _id: event._id }, { $inc: { totalParticipants: 1 } });
+  }
+
+  /**
+   * API 3 — All events joined by the logged-in student with attendance details.
+   */
+  async getMyJoinedEvents(studentUserId: string): Promise<IJoinedEventResponse[]> {
+    const student = await this.resolveStudent(studentUserId);
+
+    const participations = await EventParticipant.find({ studentId: student._id })
+      .populate('eventId', '_id title description eventDate city status totalParticipants')
+      .sort({ joinedAt: -1 })
+      .lean();
+
+    return participations.map((participation) => this.mapJoinedEvent(participation));
   }
 
   private async listEvents(
@@ -270,6 +367,77 @@ export class EventService {
     }
 
     return event;
+  }
+
+  private async resolveStudent(
+    studentUserId: string,
+  ): Promise<{ _id: Types.ObjectId; fullName: string; schoolId: string }> {
+    if (!studentUserId || !isValidObjectId(studentUserId)) {
+      throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+    }
+
+    const student = await User.findById(studentUserId).select('_id fullName role schoolId').lean();
+    if (!student || student.role !== ROLES.STUDENT) {
+      throw new ApiError(HTTP_STATUS.FORBIDDEN, 'Student access only');
+    }
+    if (!student.schoolId) {
+      throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Student is not linked to a school');
+    }
+
+    return {
+      _id: student._id,
+      fullName: student.fullName,
+      schoolId: student.schoolId.toString(),
+    };
+  }
+
+  private assertEventBelongsToSchool(event: IEventDocument, schoolId: string): void {
+    const belongsToSchool =
+      event.eventType === 'public' || event.schoolIds.some((id) => id.toString() === schoolId);
+
+    if (!belongsToSchool) {
+      throw new ApiError(HTTP_STATUS.FORBIDDEN, 'This event does not belong to your school');
+    }
+  }
+
+  private async assertNotAlreadyJoined(eventId: string, studentId: Types.ObjectId): Promise<void> {
+    const existing = await EventParticipant.findOne({
+      eventId: new Types.ObjectId(eventId),
+      studentId,
+    })
+      .select('_id')
+      .lean();
+
+    if (existing) {
+      throw new ApiError(HTTP_STATUS.CONFLICT, 'You have already joined this event');
+    }
+  }
+
+  private mapJoinedEvent(participation: Record<string, unknown>): IJoinedEventResponse {
+    const event = participation.eventId as
+      | Record<string, unknown>
+      | Types.ObjectId
+      | null
+      | undefined;
+
+    let mappedEvent: IJoinedEventResponse['event'] = null;
+    if (event && typeof event === 'object' && '_id' in event && 'title' in event) {
+      mappedEvent = {
+        _id: (event._id as { toString(): string }).toString(),
+        title: event.title as string,
+        description: event.description as string,
+        eventDate: event.eventDate as Date,
+        city: event.city as string,
+        status: event.status as EventStatus,
+        totalParticipants: (event.totalParticipants as number) ?? 0,
+      };
+    }
+
+    return {
+      event: mappedEvent,
+      joinedAt: participation.joinedAt as Date,
+      attendanceStatus: participation.attendanceStatus as AttendanceStatus,
+    };
   }
 
   private async validateReferences(

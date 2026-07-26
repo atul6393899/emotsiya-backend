@@ -2,6 +2,10 @@ import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 
 export type EventType = 'public' | 'private';
 
+export type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+
+export const EVENT_STATUSES: EventStatus[] = ['upcoming', 'ongoing', 'completed', 'cancelled'];
+
 export interface IEventDocument extends Document<Types.ObjectId> {
   title: string;
   description: string;
@@ -11,6 +15,9 @@ export interface IEventDocument extends Document<Types.ObjectId> {
   eventType: EventType;
   schoolIds: Types.ObjectId[];
   governmentIds: Types.ObjectId[];
+  status: EventStatus;
+  totalParticipants: number;
+  maxParticipants: number;
   is_active: boolean;
   created_by?: Types.ObjectId | null;
   updated_by?: Types.ObjectId | null;
@@ -66,6 +73,23 @@ const eventSchema = new Schema<IEventDocument>(
         ref: 'User',
       },
     ],
+    status: {
+      type: String,
+      enum: EVENT_STATUSES,
+      default: 'upcoming',
+      index: true,
+    },
+    totalParticipants: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    // 0 means unlimited participants.
+    maxParticipants: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     is_active: {
       type: Boolean,
       default: true,

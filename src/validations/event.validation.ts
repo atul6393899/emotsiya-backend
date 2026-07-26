@@ -56,6 +56,15 @@ export const eventIdParamsValidation = Joi.object({
   id: objectIdRequired,
 });
 
+/** Validates the :id param when a student joins an event (reuses the eventId ObjectId rule). */
+export const joinEventValidation = Joi.object({
+  id: objectIdRequired.messages({
+    'any.required': 'eventId is required',
+    'string.empty': 'eventId is required',
+    'string.pattern.base': 'eventId must be a valid MongoDB ObjectId',
+  }),
+});
+
 export const eventListQueryValidation = Joi.object({
   search: Joi.string().trim().allow('').optional(),
   page: Joi.number().integer().min(1).optional(),

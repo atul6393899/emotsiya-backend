@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { MissionService } from '../services/mission.service';
 import { ApiResponse } from '../utils/ApiResponse';
+import { ApiError } from '../utils/ApiError';
+import { HTTP_STATUS } from '../utils/constants';
 import { MissionDifficulty } from '../models/mission.model';
 
 const missionService = new MissionService();
@@ -69,6 +71,27 @@ export class MissionController {
     try {
       const result = await missionService.getMissions(parseListQuery(req.query));
       ApiResponse.success(res, result, 'Mission list fetched successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getStudentMissions = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const studentUserId = req.user?.userId;
+      if (!studentUserId) {
+        throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+      }
+
+      const result = await missionService.getMissionsForStudent(
+        studentUserId,
+        parseListQuery(req.query),
+      );
+      ApiResponse.success(res, result, 'Student missions fetched successfully');
     } catch (error) {
       next(error);
     }

@@ -1,9 +1,11 @@
 import { Types } from 'mongoose';
 import { Mission, IMissionDocument, MissionDifficulty } from '../models/mission.model';
 import { Event } from '../models/event.model';
+import { User } from '../models/user.model';
 import { ApiError } from '../utils/ApiError';
 import { HTTP_STATUS } from '../utils/constants';
 import { isValidObjectId, getPaginationParams, buildPaginationMeta } from '../utils/helpers';
+import { ROLES } from '../constants/roles';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const POPULATE_EVENT = '_id title eventDate';
@@ -136,8 +138,50 @@ export class MissionService {
   }
 
   async getMissions(query: IMissionListQuery = {}): Promise<IMissionListResponse> {
-    const { skip, limit, page } = getPaginationParams(query.page, query.limit);
     const filter = await this.buildListFilter(query);
+    return this.runMissionListQuery(filter, query);
+  }
+
+  /**
+   * Missions attached to events associated with the logged-in student's school.
+   * A student sees active missions whose event is public or privately linked to
+   * their school. Automatically scoped to the student's school.
+   */
+  async getMissionsForStudent(
+    studentUserId: string,
+    query: IMissionListQuery = {},
+  ): Promise<IMissionListResponse> {
+    const schoolId = await this.resolveStudentSchoolId(studentUserId);
+    const eventIds = await this.getSchoolVisibleEventIds(schoolId);
+
+    const { page, limit } = getPaginationParams(query.page, query.limit);
+    if (eventIds.length === 0) {
+      const meta = buildPaginationMeta(0, page, limit);
+      return {
+        missions: [],
+        pagination: {
+          page: meta.page,
+          limit: meta.limit,
+          total: meta.total,
+          totalPages: meta.totalPages,
+        },
+      };
+    }
+
+    // Students only see active missions of their school's events.
+    const baseFilter = await this.buildListFilter({ ...query, is_active: true });
+    const eventScope = { eventId: { $in: eventIds } };
+    const filter =
+      Object.keys(baseFilter).length > 0 ? { $and: [baseFilter, eventScope] } : eventScope;
+
+    return this.runMissionListQuery(filter, query);
+  }
+
+  private async runMissionListQuery(
+    filter: Record<string, unknown>,
+    query: IMissionListQuery,
+  ): Promise<IMissionListResponse> {
+    const { skip, limit, page } = getPaginationParams(query.page, query.limit);
     const sort = this.buildSort(query.sortBy || query.sort_by, query.sortOrder || query.sort_order);
 
     const [missions, total] = await Promise.all([
@@ -161,6 +205,34 @@ export class MissionService {
         totalPages: meta.totalPages,
       },
     };
+  }
+
+  private async resolveStudentSchoolId(studentUserId: string): Promise<string> {
+    if (!studentUserId || !isValidObjectId(studentUserId)) {
+      throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+    }
+
+    const student = await User.findById(studentUserId).select('role schoolId').lean();
+    if (!student || student.role !== ROLES.STUDENT) {
+      throw new ApiError(HTTP_STATUS.FORBIDDEN, 'Student access only');
+    }
+    if (!student.schoolId) {
+      throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Student is not linked to a school');
+    }
+
+    return student.schoolId.toString();
+  }
+
+  private async getSchoolVisibleEventIds(schoolId: string): Promise<Types.ObjectId[]> {
+    const schoolObjId = new Types.ObjectId(schoolId);
+    const events = await Event.find({
+      is_active: true,
+      $or: [{ eventType: 'public' }, { eventType: 'private', schoolIds: schoolObjId }],
+    })
+      .select('_id')
+      .lean();
+
+    return events.map((event) => event._id);
   }
 
   async getMissionById(id: string): Promise<IMissionResponse> {

@@ -7,6 +7,8 @@ import studentRoutes from './student.routes';
 import eventCategoryRoutes from './eventcategory.routes';
 import eventRoutes from './event.routes';
 import missionRoutes from './mission.routes';
+import taskSubmissionRoutes from './taskSubmission.routes';
+import expertSessionRoutes from './expertSession.routes';
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use('/student', studentRoutes);
 router.use('/event-categories', eventCategoryRoutes);
 router.use('/events', eventRoutes);
 router.use('/missions', missionRoutes);
+router.use('/task-submissions', taskSubmissionRoutes);
+router.use('/expert-sessions', expertSessionRoutes);
 
 export default router;

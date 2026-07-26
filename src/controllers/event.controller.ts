@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { EventService } from '../services/event.service';
 import { ApiResponse } from '../utils/ApiResponse';
+import { ApiError } from '../utils/ApiError';
+import { HTTP_STATUS } from '../utils/constants';
 
 const eventService = new EventService();
 
@@ -77,6 +79,56 @@ export class EventController {
     try {
       await eventService.deleteEvent(req.params.id as string);
       ApiResponse.success(res, null, 'Event deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getStudentEvents = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const studentUserId = req.user?.userId;
+      if (!studentUserId) {
+        throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+      }
+
+      const events = await eventService.getStudentEvents(studentUserId);
+      ApiResponse.success(res, events, 'Student events fetched successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static joinEvent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const studentUserId = req.user?.userId;
+      if (!studentUserId) {
+        throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+      }
+
+      await eventService.joinEvent(studentUserId, req.params.id as string);
+      ApiResponse.success(res, null, 'Event joined successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getMyJoinedEvents = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const studentUserId = req.user?.userId;
+      if (!studentUserId) {
+        throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+      }
+
+      const events = await eventService.getMyJoinedEvents(studentUserId);
+      ApiResponse.success(res, events, 'Joined events fetched successfully');
     } catch (error) {
       next(error);
     }

@@ -13,6 +13,17 @@ import {
 
 const router = Router();
 
+// ──────────── Student: missions of the student's school events ────────────
+// Declared before the admin guard below so it is scoped to STUDENT.
+router.get(
+  '/student',
+  authenticate,
+  authorizeRoles(ROLES.STUDENT),
+  validate({ query: missionListQueryValidation }),
+  MissionController.getStudentMissions,
+);
+
+// ──────────── Admin Mission CRUD ────────────
 router.use(authenticate, authorizeRoles(ROLES.ADMIN));
 
 router.post('/', validate({ body: createMissionValidation }), MissionController.createMission);
