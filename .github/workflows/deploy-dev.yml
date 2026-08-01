@@ -23,7 +23,7 @@ jobs:
 
           ssh-keyscan -H "${{ vars.EC2_IP }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy Backend
+      - name: Deploy Backend to EC2
         env:
           NODE_ENV: ${{ secrets.NODE_ENV }}
           PORT: ${{ secrets.PORT }}
@@ -38,49 +38,54 @@ jobs:
           AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
 
         run: |
-
-          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_IP }} "bash -s" << EOF
+          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_IP }} "sudo bash -s" <<EOF
 
           cd /home/ubuntu/backend
 
-          sudo git config --global --add safe.directory /home/ubuntu/backend
+          echo "Current user:"
+          whoami
 
+          echo "Adding git safe directory..."
+          git config --global --add safe.directory /home/ubuntu/backend
+
+          echo "Pulling latest code..."
           git checkout develop
           git pull origin develop
 
-
-          echo "Creating .env file"
+          echo "Creating .env file..."
 
           cat > .env << ENVFILE
-          NODE_ENV=$NODE_ENV
-          PORT=$PORT
+          NODE_ENV=${NODE_ENV}
+          PORT=${PORT}
 
-          MONGO_URI=$MONGO_URI
+          MONGO_URI=${MONGO_URI}
 
-          JWT_SECRET=$JWT_SECRET
-          JWT_EXPIRES_IN=$JWT_EXPIRES_IN
+          JWT_SECRET=${JWT_SECRET}
+          JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
 
-          REFRESH_TOKEN_SECRET=$REFRESH_TOKEN_SECRET
-          REFRESH_TOKEN_EXPIRES_IN=$REFRESH_TOKEN_EXPIRES_IN
+          REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+          REFRESH_TOKEN_EXPIRES_IN=${REFRESH_TOKEN_EXPIRES_IN}
 
-          AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-          AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-          AWS_REGION=$AWS_REGION
-          AWS_BUCKET_NAME=$AWS_BUCKET_NAME
+          AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          AWS_REGION=${AWS_REGION}
+          AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
           ENVFILE
 
+          echo ".env created successfully"
 
-          echo ".env created"
-
-
+          echo "Installing dependencies..."
           npm install
 
+          echo "Building project..."
           npm run build
 
+          echo "Restarting backend..."
 
           pm2 restart backend || pm2 start npm --name backend -- start
 
           pm2 save
 
+          echo "Deployment completed"
 
           EOF
