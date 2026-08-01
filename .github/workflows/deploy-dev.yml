@@ -28,6 +28,7 @@ jobs:
           ssh ${{ vars.EC2_USER }}@${{ vars.EC2_IP }} << 'EOF'
 
           cd /home/ubuntu/backend
+          sudo su
 
           git checkout develop
           git pull origin develop
