@@ -1,43 +1,20 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import os from 'os';
 
 const PORT = process.env.PORT || 5000;
 
-const getLanIp = (): string | null => {
-  const nets = os.networkInterfaces();
-  for (const entries of Object.values(nets)) {
-    for (const net of entries ?? []) {
-      if (net.family === 'IPv4' && !net.internal) {
-        return net.address;
-      }
-    }
-  }
-  return null;
-};
-
-const lanIp = getLanIp();
+const cloudfrontUrl =
+  process.env.SWAGGER_SERVER_URL?.replace(/\/$/, '') || 'https://d2p2g797980gqg.cloudfront.net';
 
 const servers: Array<{ url: string; description: string }> = [
   {
     url: `http://localhost:${PORT}`,
     description: 'Local development',
   },
+  {
+    url: cloudfrontUrl,
+    description: 'Production (CloudFront)',
+  },
 ];
-
-if (lanIp) {
-  servers.push({
-    url: `http://${lanIp}:${PORT}`,
-    description: 'LAN / network access',
-  });
-}
-
-const ngrokUrl =
-  process.env.NGROK_URL?.replace(/\/$/, '') || 'https://scoundrel-drinking-recycler.ngrok-free.dev';
-
-servers.push({
-  url: ngrokUrl,
-  description: 'ngrok public URL',
-});
 
 const options: swaggerJsdoc.Options = {
   definition: {
