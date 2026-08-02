@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { logger } from './logger';
 
 export const connectDatabase = async (): Promise<void> => {
+  //
   const mongoUri = process.env.MONGO_URI;
 
   if (!mongoUri) {
