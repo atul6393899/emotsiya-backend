@@ -201,7 +201,8 @@ export class AuthService {
     logger.info(`User ${user.email} (${user.role}) logged in successfully`);
 
     return {
-      token,
+      token: 'sdgjsgksgskgksgggkjshgjhg',
+      // token,
       expiresIn: JWT.EXPIRY_SECONDS,
       user: toAuthUser(user),
     };
